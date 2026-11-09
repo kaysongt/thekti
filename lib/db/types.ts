@@ -165,6 +165,12 @@ export class StorageUnavailableError extends Error {
 export interface DataStore {
   /** Private reporting data. Authorize staff before calling. */
   getLearningActivity(): Promise<LearningActivity>;
+  // Administrator-created accounts and zero-cost module grants, committed atomically.
+  saveAdminModuleAccess(input: {
+    account: { studentId: string } | { student: NewStudent };
+    moduleSlugs: string[];
+    actorId: string;
+  }): Promise<Student>;
   // students
   createStudent(input: NewStudent): Promise<Student>;
   createStudentWithEnrollment(

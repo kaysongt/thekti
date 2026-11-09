@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { findDiscussionLesson } from "@/lib/discussion-target";
 import { redirect } from "next/navigation";
 import { z } from "zod";
+import { ADMIN_INITIAL_PASSWORD, adminAccountSchema, adminModuleSlugsSchema } from "@/lib/admin-accounts";
 
 import { currentStudent, hashPassword, isStaff } from "@/lib/auth";
 import { db } from "@/lib/db";
@@ -179,4 +180,44 @@ export async function resetStudentPassword(formData: FormData): Promise<void> {
   revalidatePath("/admin");
   revalidatePath("/admin/settings");
   redirect(adminSettingsRedirect(formData, "reset", "done"));
+}
+
+/** Only administrators may create accounts or issue complimentary module access. */
+export async function createStudentAccount(formData: FormData): Promise<void> {
+  const actor = await administrator();
+  const account = adminAccountSchema.safeParse({
+    fullName: formData.get("fullName"), email: formData.get("email"), country: formData.get("country"),
+  });
+  const modules = adminModuleSlugsSchema.safeParse(formData.getAll("modules"));
+  if (!account.success || !modules.success) redirect("/admin/settings?account=invalid#create-account");
+  if (await db.getStudentByEmail(account.data.email)) redirect("/admin/settings?account=duplicate#create-account");
+  try {
+    await db.saveAdminModuleAccess({
+      account: { student: { ...account.data, passwordHash: await hashPassword(ADMIN_INITIAL_PASSWORD) } },
+      moduleSlugs: modules.data, actorId: actor.id,
+    });
+  } catch {
+    // Includes a concurrent duplicate email; no partial account/grants are committed.
+    redirect("/admin/settings?account=failed#create-account");
+  }
+  revalidatePath("/admin");
+  revalidatePath("/admin/settings");
+  redirect(`/admin/settings?account=created&q=${encodeURIComponent(account.data.email)}`);
+}
+
+export async function setStudentModuleAccess(formData: FormData): Promise<void> {
+  const actor = await administrator();
+  const id = z.string().uuid().safeParse(formData.get("studentId"));
+  const modules = adminModuleSlugsSchema.safeParse(formData.getAll("modules"));
+  if (!id.success || !modules.success) redirect("/admin/settings?account=invalid");
+  if (!await db.getStudentById(id.data)) redirect("/admin/settings?account=missing");
+  try {
+    await db.saveAdminModuleAccess({ account: { studentId: id.data }, moduleSlugs: modules.data, actorId: actor.id });
+  } catch {
+    redirect("/admin/settings?account=failed");
+  }
+  revalidatePath("/admin");
+  revalidatePath("/admin/settings");
+  revalidatePath("/dashboard");
+  redirect("/admin/settings?account=saved");
 }

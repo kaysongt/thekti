@@ -247,3 +247,27 @@ npm audit --omit=dev
 The former GitHub Pages workflow has been removed. GitHub Pages only serves static files and
 cannot run the production account, enrollment, grading, or community features. Disable Pages
 in the repository settings after the Vercel domain is working.
+
+## Administrator-created accounts and module grants
+
+At `/admin/settings`, administrators can create student accounts with a name,
+email, country, and selected module grants. The initial password is always
+`password123`, stored using the existing salted scrypt hashing. Share it directly
+with the student; the dashboard provides password changes. Account creation does
+not sign out or replace the administrator's session.
+
+Expand a person's **Module access** control to edit complimentary grants. These
+are zero-dollar `admin-grant` enrollments, not payment receipts. Removing a grant
+cancels that grant while preserving its history; regranting reuses it. Paid and
+scholarship enrollments, launch access to Module I, and module release dates
+continue to apply independently. STAFF accounts cannot create accounts or modify
+these grants, including through direct Server Action requests.
+
+This feature uses the existing PostgreSQL schema and requires no new migration.
+Set `DATABASE_URL` in the deployment environment to use the existing database;
+cloning the repository does not download production records. Without it, local
+runs use the development file adapter. Never commit database credentials or data.
+
+Validation: `node --import tsx scripts/check-admin-accounts.mts` checks account
+creation, password verification, module grant changes, and preservation of paid
+access using an isolated temporary store.

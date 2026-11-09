@@ -98,6 +98,35 @@ async function withScholarshipReviewLock<T>(operation: () => Promise<T>): Promis
 }
 
 export const fileStore: DataStore = {
+  async saveAdminModuleAccess({ account, moduleSlugs }) {
+    return withScholarshipReviewLock(async () => {
+      const data = await read();
+      const now = new Date().toISOString();
+      let student: Student;
+      if ("student" in account) {
+        if (data.students.some((p) => p.email === normalize(account.student.email))) throw new Error("Account already exists");
+        student = { ...account.student, email: normalize(account.student.email), role: "student", id: randomUUID(), createdAt: now };
+        data.students.push(student);
+      } else {
+        const found = data.students.find((p) => p.id === account.studentId);
+        if (!found) throw new Error("Account not found");
+        student = found;
+      }
+      for (const e of data.enrollments) {
+        if (e.studentId === student.id && e.provider === "admin-grant" && e.status === "active") {
+          e.status = "canceled";
+          e.updatedAt = now;
+        }
+      }
+      for (const slug of new Set(moduleSlugs)) {
+        const existing = data.enrollments.find((e) => e.studentId === student.id && e.provider === "admin-grant" && e.product === slug);
+        if (existing) Object.assign(existing, { status: "active", activatedAt: now, accessSuspendedAt: null, updatedAt: now });
+        else data.enrollments.push({ id: randomUUID(), studentId: student.id, product: slug, plan: "certificate", status: "active", amount: 0, currency: "USD", provider: "admin-grant", providerRef: `${student.id}:${slug}`, activatedAt: now, accessSuspendedAt: null, createdAt: now, updatedAt: now });
+      }
+      await write(data);
+      return student;
+    });
+  },
   async getLearningActivity() {
     const data = await read();
     return {

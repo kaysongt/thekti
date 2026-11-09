@@ -2216,3 +2216,16 @@ main[tabindex="-1"]:focus { outline: none; }
 .student-course-progress span, .student-course-progress small { color: var(--muted); margin-top: 6px; }
 .module-update video { display: block; width: 100%; max-width: 800px; height: auto; margin: 22px auto; background: #071222; border-radius: 12px; }
 .module-update details { margin-top: 20px; }
+
+.admin-create-account { display: grid; gap: 18px; }
+.admin-account-fields { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.admin-account-fields label { display: grid; gap: 6px; }
+.admin-module-fields { display: grid; gap: 8px; margin: 0; padding: 16px; border: 1px solid var(--rule); border-radius: 8px; }
+.admin-module-fields legend { padding: 0 6px; font-weight: 600; }
+.admin-module-fields label { display: flex; gap: 12px; align-items: center; min-height: 44px; cursor: pointer; }
+.admin-module-fields input { width: 20px; height: 20px; flex-shrink: 0; }
+.admin-module-access { min-width: 0; }
+.admin-module-access summary { cursor: pointer; padding: 12px 0; }
+.admin-module-access form { margin-top: 12px; }
+.admin-create-account > button { justify-self: start; min-height: 44px; }
+@media (max-width: 760px) { .admin-account-fields { grid-template-columns: 1fr; } }

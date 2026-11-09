@@ -9,7 +9,11 @@ import {
   STAFF_ACCESS_REQUIRED_PATH,
 } from "@/lib/login-redirect";
 import { isStripeCheckoutConfigured } from "@/lib/payments/stripe-client";
-import { resetStudentPassword, setStudentRole } from "../actions";
+import { getCurriculum } from "@/lib/curriculum";
+import { hasActiveAccess } from "@/lib/access";
+import ModuleAccessFields from "@/components/ModuleAccessFields";
+import AdminSubmitButton from "@/components/AdminSubmitButton";
+import { createStudentAccount, setStudentModuleAccess, resetStudentPassword, setStudentRole } from "../actions";
 
 export const metadata: Metadata = {
   title: "Admin settings",
@@ -24,17 +28,28 @@ export default async function AdminSettings({
     role?: string;
     reset?: string;
     page?: string;
+    account?: string;
   }>;
 }) {
   const actor = await currentStudent();
   if (!actor) redirect(staffLoginPath("/admin/settings"));
   if (!isStaff(actor)) redirect(STAFF_ACCESS_REQUIRED_PATH);
   const admin = actor.role === "admin";
-  const { q = "", role, reset, page: pageQuery } = await searchParams;
+  const { q = "", role, reset, account, page: pageQuery } = await searchParams;
   const [people, pending] = await Promise.all([
     db.listStudents(),
     db.countPendingScholarshipApplications(),
   ]);
+  const registrations = admin ? await db.listEnrollments() : [];
+  const modules = getCurriculum().modules;
+  const accountMessages: Record<string, string> = {
+    created: "Account created. The initial password is password123. Share it directly with the student.",
+    saved: "Module grants saved.",
+    duplicate: "An account with that email already exists. Find it below to manage module grants.",
+    invalid: "Enter a full name, valid email and country, and select valid modules.",
+    missing: "That account could not be found.",
+    failed: "Changes could not be saved. Check the account details and database connection, then try again.",
+  };
   const term = q.trim().toLowerCase();
   const visible = people.filter((p) =>
     `${p.fullName} ${p.email} ${p.role}`.toLowerCase().includes(term),
@@ -107,6 +122,24 @@ export default async function AdminSettings({
           </small>
         </section>
       </div>
+      {account && accountMessages[account] ? (
+        <p className={`notice ${account === "created" || account === "saved" ? "good" : "warn"}`} role="status">{accountMessages[account]}</p>
+      ) : null}
+      {admin ? (
+        <section className="admin-section" id="create-account">
+          <div className="admin-section-head"><div><h2>Create a student account</h2><p>Choose the modules this student may study. No payment is required for these grants.</p></div></div>
+          <form action={createStudentAccount} className="admin-create-account">
+            <div className="admin-account-fields">
+              <label>Full name<input name="fullName" required minLength={2} maxLength={160} autoComplete="name" /></label>
+              <label>Email<input name="email" type="email" required maxLength={254} autoComplete="email" /></label>
+              <label>Country<input name="country" required minLength={2} maxLength={100} autoComplete="country-name" /></label>
+            </div>
+            <p className="admin-form-note">Initial password: <strong>password123</strong>. Students can change it from their dashboard.</p>
+            <ModuleAccessFields modules={modules} selected={[]} />
+            <AdminSubmitButton label="Create account" />
+          </form>
+        </section>
+      ) : null}
       <section className="admin-section">
         <div className="admin-section-head admin-export-head">
           <div>
@@ -162,6 +195,18 @@ export default async function AdminSettings({
                   {p.country} · {p.role}
                 </span>
               </div>
+              {admin ? (
+                <details className="admin-module-access">
+                  <summary>Module access for {p.fullName}</summary>
+                  <form action={setStudentModuleAccess} className="admin-create-account">
+                    <input type="hidden" name="studentId" value={p.id} />
+                    <ModuleAccessFields modules={modules} selected={registrations.filter((e) => e.studentId === p.id && e.provider === "admin-grant" && e.status === "active" && !e.accessSuspendedAt).map((e) => e.product)} />
+                    <p className="admin-form-note">Saving changes only these administrator grants. Paid enrollments, scholarships, and the first module’s launch access still apply. Module release dates still apply.</p>
+                    <p className="admin-form-note">Other active enrollment access: {modules.filter((m) => hasActiveAccess(registrations.filter((e) => e.studentId === p.id && e.provider !== "admin-grant"), m.slug)).map((m) => m.short_title).join(", ") || "None"}.</p>
+                    <AdminSubmitButton label="Save module grants" />
+                  </form>
+                </details>
+              ) : null}
               {admin && p.id !== actor.id ? (
                 <div className="admin-account-controls">
                   <form action={setStudentRole} className="admin-inline-form">

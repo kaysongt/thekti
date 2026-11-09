@@ -191,6 +191,43 @@ function jsonValue(value: unknown): Prisma.InputJsonValue {
 class ScholarshipReviewConflict extends Error {}
 
 export const prismaStore: DataStore = {
+  async saveAdminModuleAccess({ account, moduleSlugs, actorId }) {
+    return prisma.$transaction(async (tx) => {
+      const student = "student" in account
+        ? await tx.student.create({ data: {
+            email: account.student.email.trim().toLowerCase(),
+            fullName: account.student.fullName,
+            country: account.student.country,
+            passwordHash: account.student.passwordHash,
+            role: PrismaStudentRole.STUDENT,
+          } })
+        : await tx.student.findUniqueOrThrow({ where: { id: account.studentId } });
+      // Keep grant history and leave paid/scholarship enrollments untouched.
+      await tx.enrollment.updateMany({
+        where: { studentId: student.id, provider: "admin-grant", status: "ACTIVE" },
+        data: { status: "CANCELED" },
+      });
+      for (const slug of new Set(moduleSlugs)) {
+        const data = {
+          studentId: student.id, product: slug, plan: PrismaEnrollmentPlan.CERTIFICATE,
+          status: PrismaEnrollmentStatus.ACTIVE, amount: 0, currency: "USD",
+          provider: "admin-grant", providerRef: `${student.id}:${slug}`,
+          activatedAt: new Date(), accessSuspendedAt: null,
+        };
+        await tx.enrollment.upsert({
+          where: { provider_providerRef: { provider: data.provider, providerRef: data.providerRef } },
+          create: data, update: data,
+        });
+      }
+      // actorId is retained in the event audit trail, never as payment evidence.
+      await tx.paymentEvent.create({ data: {
+        provider: "admin-grant", providerRef: crypto.randomUUID(),
+        eventType: "module-access-set", payload: { actorId, studentId: student.id, moduleSlugs },
+        processingResult: "applied", eventCreatedAt: new Date(),
+      } });
+      return mapStudent(student);
+    }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+  },
   async getLearningActivity() {
     const [progress, quizzes, assessments, posts] = await Promise.all([
       prisma.progress.findMany(),

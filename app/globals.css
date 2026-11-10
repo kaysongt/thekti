@@ -2229,3 +2229,43 @@ main[tabindex="-1"]:focus { outline: none; }
 .admin-module-access form { margin-top: 12px; }
 .admin-create-account > button { justify-self: start; min-height: 44px; }
 @media (max-width: 760px) { .admin-account-fields { grid-template-columns: 1fr; } }
+
+/* Admin mobile usability: account management must not overflow a phone viewport. */
+@media (max-width: 760px) {
+  .admin-shell { padding-inline: 16px; }
+  .admin-shell .pagehead h1 { overflow-wrap: anywhere; }
+  .admin-section { margin-top: 30px; min-width: 0; }
+  .admin-section-head, .admin-export-head {
+    flex-direction: column; align-items: stretch; gap: 12px;
+  }
+  .admin-section-head > *, .admin-export-head > * { min-width: 0; }
+  .admin-section-head .btn, .admin-export-head .btn {
+    display: inline-flex; justify-content: center; align-items: center;
+    text-align: center; white-space: normal;
+  }
+  .admin-tabs { max-width: 100%; overscroll-behavior-x: contain; scrollbar-width: thin; }
+  .admin-overview-card > strong { font-size: clamp(21px, 6vw, 28px); overflow-wrap: anywhere; }
+  .admin-student-row { display: grid; grid-template-columns: minmax(0, 1fr); padding: 16px; }
+  .admin-student-identity, .admin-module-access, .admin-account-controls {
+    width: 100%; min-width: 0;
+  }
+  .admin-module-access summary, .admin-account-controls summary { overflow-wrap: anywhere; }
+  .admin-module-fields { min-width: 0; padding: 12px; }
+  .admin-module-fields label { text-transform: none; letter-spacing: normal; font-size: 13px; line-height: 1.45; }
+  .admin-module-fields label span { min-width: 0; overflow-wrap: anywhere; }
+  .admin-inline-form { width: 100%; align-items: stretch; }
+  .admin-inline-form label, .admin-inline-form select, .admin-inline-form button {
+    width: 100%; min-width: 0;
+  }
+  .admin-create-account > button { width: 100%; justify-self: stretch; }
+  .admin-search-form > div { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .admin-search-form > div > input { grid-column: 1 / -1; width: 100%; }
+  .admin-search-form > div > .btn { width: 100%; text-align: center; }
+  .admin-pagination { gap: 10px; }
+  .admin-money-summary { grid-template-columns: 1fr; }
+}
+@media (max-width: 380px) {
+  .admin-shell { padding-inline: 12px; }
+  .admin-student-row { padding: 12px; }
+  .admin-module-fields { padding: 8px; }
+}

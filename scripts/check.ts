@@ -1024,11 +1024,15 @@ async function main() {
     assert.equal(isRegistrationOpen(new Date("2026-10-04T23:00:00Z")), false);
     assert.equal(isRegistrationOpen(new Date("2026-10-05T10:00:00Z")), false);
     assert.equal(isRegistrationOpen(new Date("invalid")), false);
+    const reopenedUntil = new Date("2026-11-13T18:00:00Z");
+    assert.equal(isRegistrationOpen(new Date("2026-11-13T17:59:59.999Z"), reopenedUntil), true);
+    assert.equal(isRegistrationOpen(new Date("2026-11-13T18:00:00Z"), reopenedUntil), false);
   });
   const registrationActionSource = await fs.readFile(path.join(process.cwd(), "app/enroll/actions.ts"), "utf8");
   check("registration cutoff is checked server-side before account creation", () => {
-    assert.ok(registrationActionSource.includes("if (!isRegistrationOpen())"));
-    assert.ok(registrationActionSource.indexOf("if (!isRegistrationOpen())") < registrationActionSource.indexOf("db.createStudentWithEnrollment("));
+    assert.ok(registrationActionSource.includes("await getRegistrationDeadline()"));
+    assert.ok(registrationActionSource.includes("if (!isRegistrationOpen(new Date(), deadline))"));
+    assert.ok(registrationActionSource.indexOf("if (!isRegistrationOpen(new Date(), deadline))") < registrationActionSource.indexOf("db.createStudentWithEnrollment("));
   });
   check("only Module 1 community is released at launch, even with full-program access", () => {
     const launch = new Date("2026-10-01T11:00:00Z");

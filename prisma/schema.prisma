@@ -308,3 +308,8 @@ model PaymentEvent {
   @@unique([provider, providerRef])
   @@index([provider, eventCreatedAt])
 }
+
+model RegistrationWindow {
+  id       Int      @id
+  closesAt DateTime
+}

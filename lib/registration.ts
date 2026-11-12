@@ -1,6 +1,37 @@
-// The grace period includes all of Sunday in Nigeria (UTC+1).
-export const REGISTRATION_CLOSES_AT = "2026-10-05T00:00:00+01:00";
-export const REGISTRATION_DEADLINE_LABEL = "Sunday, October 4, 2026 at 11:59 p.m. WAT (Nigeria time)";
-export function isRegistrationOpen(now = new Date()): boolean {
-  return now.getTime() < Date.parse(REGISTRATION_CLOSES_AT);
+// The previous grace period ended at midnight in Nigeria (UTC+1).
+const previousCutoff = new Date("2026-10-05T00:00:00+01:00");
+const registrationWindowId = 1;
+const oneDayMs = 24 * 60 * 60 * 1000;
+
+export function isRegistrationOpen(now = new Date(), closesAt = previousCutoff): boolean {
+  return now.getTime() < closesAt.getTime();
+}
+
+export function formatRegistrationDeadline(closesAt: Date): string {
+  const time = new Intl.DateTimeFormat("en-NG", {
+    timeZone: "Africa/Lagos",
+    dateStyle: "full",
+    timeStyle: "short",
+  }).format(closesAt);
+  return `${time} WAT (Nigeria time)`;
+}
+
+export async function getRegistrationDeadline(): Promise<Date> {
+  if (!process.env.DATABASE_URL) return previousCutoff;
+  const { prisma } = await import("./db/prisma");
+  const window = await prisma.registrationWindow.findUniqueOrThrow({
+    where: { id: registrationWindowId },
+  });
+  return window.closesAt;
+}
+
+export async function openRegistrationForOneDay(): Promise<boolean> {
+  if (!process.env.DATABASE_URL) return false;
+  const { prisma } = await import("./db/prisma");
+  const now = new Date();
+  const result = await prisma.registrationWindow.updateMany({
+    where: { id: registrationWindowId, closesAt: { lte: now } },
+    data: { closesAt: new Date(now.getTime() + oneDayMs) },
+  });
+  return result.count === 1;
 }

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import { isRegistrationOpen, REGISTRATION_DEADLINE_LABEL } from "@/lib/registration";
+import { formatRegistrationDeadline, getRegistrationDeadline, isRegistrationOpen } from "@/lib/registration";
 
 import { getModuleStatuses } from "@/lib/content";
 import {
@@ -78,7 +78,8 @@ const FACULTY_ROSTER: readonly FacultyRosterMember[] = [
   },
 ];
 
-export default function HomePage() {
+export default async function HomePage() {
+  const registrationDeadline = await getRegistrationDeadline();
   const { program, grading } = getCurriculum();
   const moduleStatuses = getModuleStatuses();
   const firstModule = moduleStatuses[0];
@@ -92,7 +93,7 @@ export default function HomePage() {
 
   return (
     <main className="marketing-home" id="main-content" tabIndex={-1}>
-      {isRegistrationOpen() ? <div className="shell"><p className="notice good"><strong>Registration extended through Sunday.</strong> Dr Kay has announced a grace period until {REGISTRATION_DEADLINE_LABEL}. <Link href="/enroll">Register now →</Link></p></div> : null}
+      {isRegistrationOpen(new Date(), registrationDeadline) ? <div className="shell"><p className="notice good"><strong>Registration is open.</strong> Sign up before {formatRegistrationDeadline(registrationDeadline)}. <Link href="/enroll">Register now →</Link></p></div> : null}
       <section className="hero home-hero">
         <div className="hero-glow" aria-hidden="true" />
         <div className="wide hero-grid">

@@ -8,6 +8,7 @@ import { ADMIN_INITIAL_PASSWORD, adminAccountSchema, adminModuleSlugsSchema } fr
 
 import { currentStudent, hashPassword, isStaff } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { openRegistrationForOneDay } from "@/lib/registration";
 import { adminSettingsRedirect } from "@/lib/admin-settings";
 import { staffLoginPath, STAFF_ACCESS_REQUIRED_PATH } from "@/lib/login-redirect";
 
@@ -27,6 +28,16 @@ async function administrator() {
   if (!student) redirect(staffLoginPath("/admin"));
   if (student.role !== "admin") redirect(STAFF_ACCESS_REQUIRED_PATH);
   return student;
+}
+
+export async function reopenRegistration(): Promise<void> {
+  await administrator();
+  const opened = await openRegistrationForOneDay();
+  if (opened) {
+    revalidatePath("/");
+    revalidatePath("/enroll");
+  }
+  redirect("/admin/settings#registration-window");
 }
 
 const activationSchema = z.object({

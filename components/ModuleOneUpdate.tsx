@@ -2,6 +2,10 @@ import Link from "next/link";
 
 export default function ModuleOneUpdate() {
   return <>
+    <p className="notice good">
+      <strong>Module 1 completion deadline: <time dateTime="2026-12-15">December 15, 2026</time>.</strong>{" "}
+      Module 2 opens on <time dateTime="2026-12-01">December 1, 2026</time>. You can continue your Module 1 work during the two-week overlap.
+    </p>
     <section className="module-update" aria-labelledby="weekly-update-title">
       <div className="eyebrow">Student update · <time dateTime="2026-10-19">19 October 2026</time></div>
       <h2 id="weekly-update-title">This week’s message from Dr. Kay</h2>

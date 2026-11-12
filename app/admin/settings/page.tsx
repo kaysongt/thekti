@@ -10,10 +10,11 @@ import {
 } from "@/lib/login-redirect";
 import { isStripeCheckoutConfigured } from "@/lib/payments/stripe-client";
 import { getCurriculum } from "@/lib/curriculum";
+import { formatRegistrationDeadline, getRegistrationDeadline, isRegistrationOpen } from "@/lib/registration";
 import { hasActiveAccess } from "@/lib/access";
 import ModuleAccessFields from "@/components/ModuleAccessFields";
 import AdminSubmitButton from "@/components/AdminSubmitButton";
-import { createStudentAccount, setStudentModuleAccess, resetStudentPassword, setStudentRole } from "../actions";
+import { createStudentAccount, setStudentModuleAccess, resetStudentPassword, setStudentRole, reopenRegistration } from "../actions";
 
 export const metadata: Metadata = {
   title: "Admin settings",
@@ -40,6 +41,8 @@ export default async function AdminSettings({
     db.listStudents(),
     db.countPendingScholarshipApplications(),
   ]);
+  const registrationDeadline = admin ? await getRegistrationDeadline() : null;
+  const registrationOpen = registrationDeadline && isRegistrationOpen(new Date(), registrationDeadline);
   const registrations = admin ? await db.listEnrollments() : [];
   const modules = getCurriculum().modules;
   const accountMessages: Record<string, string> = {
@@ -80,6 +83,23 @@ export default async function AdminSettings({
         </p>
       </header>
       <AdminNav pendingScholarshipCount={pending} />
+      {registrationDeadline ? (
+        <section className="admin-section" id="registration-window">
+          <h2>Public registration</h2>
+          {registrationOpen ? (
+            <p>Registration is open until {formatRegistrationDeadline(registrationDeadline)}.</p>
+          ) : (
+            <>
+              <p>Registration is closed. Opening it here starts a 24-hour window immediately.</p>
+              {hasDurableStorage ? (
+                <form action={reopenRegistration}>
+                  <AdminSubmitButton label="Open registration for 24 hours" />
+                </form>
+              ) : <p>Connect PostgreSQL to manage the registration window.</p>}
+            </>
+          )}
+        </section>
+      ) : null}
       <div className="admin-overview-grid">
         <section className="admin-overview-card">
           <span>Your account</span>

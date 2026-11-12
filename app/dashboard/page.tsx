@@ -112,6 +112,10 @@ export default async function DashboardPage({
   const student = await currentStudent();
   if (!student) redirect("/login");
   const staffPreview = student ? await isCoursePreview(student) : false;
+  const nameParts = student.fullName.trim().split(/\s+/);
+  const greetingName = /^(?:pastor )?godfrey ekhomu$/i.test(nameParts.join(" "))
+    ? "Pastor Godfrey"
+    : nameParts[0];
 
   const { access, payment, password } = await searchParams;
   const { program, grading } = getCurriculum();
@@ -167,7 +171,7 @@ export default async function DashboardPage({
       <LearningModeBanner student={student} preview={staffPreview} />
       <div className="pagehead">
         <div className="eyebrow">{program.institute}</div>
-        <h1>Welcome, {student.fullName.split(" ")[0]}</h1>
+        <h1>Welcome, {greetingName}</h1>
         <p className="deck">
           {progress.length
             ? `${progress.length} ${progress.length === 1 ? "topic" : "topics"} completed.`

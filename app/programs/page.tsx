@@ -42,11 +42,12 @@ export default function ProgramsPage() {
 
       <section aria-labelledby="basic-certificates">
         <h2 id="basic-certificates">Basic Certificate Programs</h2>
-        <p>Planned short-term certificates in biblical studies. Each track covers 50 credit hours.</p>
+        <p>Coming soon. Each short-term certificate covers 50 credit hours.</p>
         <ul className="cards program-cards">
           {basicCertificateAudiences.map((audience) => (
             <li className="card" key={audience}>
               <h3 className="t">Certificate in Biblical Studies for {audience}</h3>
+              <p>Coming soon</p>
             </li>
           ))}
         </ul>
@@ -54,11 +55,12 @@ export default function ProgramsPage() {
 
       <section aria-labelledby="specialized-academies">
         <h2 id="specialized-academies">Specialized Academy Programs</h2>
-        <p>Planned short courses designed to develop mastery in one subject. Each academy covers 20 credit hours.</p>
+        <p>Coming soon. Each academy covers 20 credit hours and focuses on one subject.</p>
         <ul className="cards program-cards">
           {academies.map((academy) => (
             <li className="card" key={academy}>
               <h3 className="t">{academy}</h3>
+              <p>Coming soon</p>
             </li>
           ))}
         </ul>

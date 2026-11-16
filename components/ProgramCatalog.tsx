@@ -5,13 +5,13 @@ const programs = [
     href: "/programs/believers-training",
     title: "Believers Training",
     description: "Build a foundation for following Jesus through seven video modules. Study online or complete the training with your local church.",
-    format: "Free · Self-paced or church-led",
+    format: "Free · 7 essential classes · 21 credit hours",
   },
   {
     href: "/programs/advanced-certificate",
     title: "Advanced Certificate in Biblical Studies",
     description: "Study theology, biblical foundations, the Old and New Testaments, and spiritual formation in a structured certificate program.",
-    format: "Paid · Certificate program",
+    format: "Paid · One-year program",
   },
 ];
 

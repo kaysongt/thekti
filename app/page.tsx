@@ -15,6 +15,7 @@ export default function HomePage() {
       <section aria-labelledby="programs-heading">
         <h2 id="programs-heading">Choose a program</h2>
         <ProgramCatalog />
+        <Link href="/programs" className="text-action">View the full program catalog →</Link>
       </section>
     </main>
   );

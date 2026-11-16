@@ -13,6 +13,7 @@ export default function BelieversTrainingPage() {
       <header className="pagehead">
         <Link href="/programs">All programs</Link>
         <h1>Believers Training</h1>
+        <p className="eyebrow">7 essential classes · 21 credit hours</p>
         <p className="deck">Build a foundation for following Jesus in seven free video modules. Learn at your own pace or with your local church.</p>
       </header>
       <div className="cards program-cards">

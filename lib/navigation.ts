@@ -1,4 +1,5 @@
 export const PRIMARY_NAV_ITEMS = [
+  { href: "/programs", label: "Programs" },
   { href: "/curriculum", label: "Curriculum" },
   { href: "/pricing", label: "Pricing" },
   { href: "/scholarship", label: "Scholarships" },

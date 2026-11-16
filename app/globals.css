@@ -2269,3 +2269,13 @@ main[tabindex="-1"]:focus { outline: none; }
   .admin-student-row { padding: 12px; }
   .admin-module-fields { padding: 8px; }
 }
+
+.program-cards {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 285px), 1fr));
+  list-style: none;
+  padding: 0;
+}
+
+.program-cards > li > .card {
+  height: 100%;
+}

@@ -6,7 +6,7 @@ const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.thekti.org";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const { modules } = getCurriculum();
-  const publicPaths = ["", "/curriculum", "/pricing", "/community", "/glossary", "/privacy"];
+  const publicPaths = ["", "/programs", "/programs/believers-training", "/programs/advanced-certificate", "/curriculum", "/pricing", "/community", "/glossary", "/privacy"];
 
   return [
     ...publicPaths.map((path, index) => ({

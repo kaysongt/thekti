@@ -335,6 +335,7 @@ async function main() {
     assert.deepEqual(
       PRIMARY_NAV_ITEMS.map((item) => [item.label, item.href]),
       [
+        ["Programs", "/programs"],
         ["Curriculum", "/curriculum"],
         ["Pricing", "/pricing"],
         ["Scholarships", "/scholarship"],
@@ -353,9 +354,9 @@ async function main() {
     assert.equal(isPrimaryRouteActive("/scholarship", "/scholarship"), true)
   );
 
-  console.log("\nhomepage faculty");
-  const homePageSource = await fs.readFile(path.join(process.cwd(), "app/page.tsx"), "utf8");
-  for (const brandFile of ["app/page.tsx", "app/layout.tsx", "components/Masthead.tsx", "components/SiteFooter.tsx"]) {
+  console.log("\nAdvanced Certificate faculty");
+  const homePageSource = await fs.readFile(path.join(process.cwd(), "app/programs/advanced-certificate/page.tsx"), "utf8");
+  for (const brandFile of ["app/programs/advanced-certificate/page.tsx", "app/layout.tsx", "components/Masthead.tsx", "components/SiteFooter.tsx"]) {
     const source = await fs.readFile(path.join(process.cwd(), brandFile), "utf8");
     check(`${brandFile} uses the approved October branding`, () => {
       assert.ok(source.includes("kti-brand-2026.png"));
@@ -384,7 +385,7 @@ async function main() {
     "Pastor Achese Opuda",
     "Dr. Sam Ekundayo",
   ];
-  check("homepage includes the seven-member faculty section", () => {
+  check("Advanced Certificate page includes the seven-member faculty section", () => {
     assert.ok(homePageSource.includes('id="faculty"'));
     for (const name of facultyNames) assert.ok(homePageSource.includes(name), name);
     assert.ok(

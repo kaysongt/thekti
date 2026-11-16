@@ -8,23 +8,25 @@ import "./globals.css";
 
 const { program } = getCurriculum();
 
+const instituteDescription = "Explore Bible study and ministry training at KingsWord Training Institute, from free Believers Training to the Advanced Certificate in Biblical Studies.";
+
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? `https://${program.contact.website}`;
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: `${program.title} — ${program.institute}`,
+    default: program.institute,
     template: `%s — ${program.institute}`,
   },
-  description: program.summary.slice(0, 155),
+  description: instituteDescription,
   icons: {
     icon: "/_next/image?url=%2Fassets%2Fkti-brand-2026.png&w=64&q=75",
     apple: "/_next/image?url=%2Fassets%2Fkti-brand-2026.png&w=256&q=75",
   },
   openGraph: {
-    title: `${program.title} — ${program.institute}`,
-    description: program.summary.slice(0, 155),
-    images: [{ url: "/assets/kti-brand-2026.png", width: 1536, height: 1024, alt: "KingsWord Training Institute — Advanced Certificate in Biblical Studies" }],
+    title: program.institute,
+    description: instituteDescription,
+    images: [{ url: "/assets/kti-brand-2026.png", width: 1536, height: 1024, alt: "KingsWord Training Institute" }],
     type: "website",
   },
   twitter: { card: "summary_large_image", images: ["/assets/kti-brand-2026.png"] },

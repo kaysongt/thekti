@@ -1,3 +1,5 @@
+import Image from "next/image";
+import styles from "@/components/ProgramImages.module.css";
 import ProgramCatalog from "@/components/ProgramCatalog";
 
 export const metadata = { title: "Programs" };
@@ -41,8 +43,13 @@ export default function ProgramsPage() {
       <ProgramCatalog />
 
       <section aria-labelledby="basic-certificates">
-        <h2 id="basic-certificates">Basic Certificate Programs</h2>
-        <p>Coming soon. Each short-term certificate covers 50 credit hours.</p>
+        <header className={styles.feature}>
+          <div>
+            <h2 id="basic-certificates">Basic Certificate Programs</h2>
+            <p>Coming soon. Each short-term certificate covers 50 credit hours.</p>
+          </div>
+          <Image src="/assets/programs/certificates.webp" alt="" width={834} height={469} sizes="(max-width: 700px) 100vw, 540px" />
+        </header>
         <ul className="cards program-cards">
           {basicCertificateAudiences.map((audience) => (
             <li className="card" key={audience}>
@@ -54,8 +61,13 @@ export default function ProgramsPage() {
       </section>
 
       <section aria-labelledby="specialized-academies">
-        <h2 id="specialized-academies">Specialized Academy Programs</h2>
-        <p>Coming soon. Each academy covers 20 credit hours and focuses on one subject.</p>
+        <header className={styles.feature}>
+          <div>
+            <h2 id="specialized-academies">Specialized Academy Programs</h2>
+            <p>Coming soon. Each academy covers 20 credit hours and focuses on one subject.</p>
+          </div>
+          <Image src="/assets/programs/academies.webp" alt="" width={834} height={469} sizes="(max-width: 700px) 100vw, 540px" />
+        </header>
         <ul className="cards program-cards">
           {academies.map((academy) => (
             <li className="card" key={academy}>

@@ -1,0 +1,87 @@
+.card {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  border: 1px solid #536382;
+  border-radius: 16px;
+  background: #172744;
+  color: #f7f9ff;
+  text-decoration: none;
+}
+.card:hover {
+  border-color: #e8bd75;
+  color: #fff;
+  text-decoration: none;
+}
+.card img {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 2 / 1;
+  object-fit: cover;
+}
+.cardBody {
+  flex: 1;
+  padding: clamp(18px, 3vw, 30px);
+}
+.cardBody h2, .feature h1, .feature h2 {
+  color: #fff;
+  margin: .4em 0;
+}
+.cardBody p, .feature p {
+  color: #e1e9fb;
+}
+.cardBody .meta, .feature .meta, .cardBody .action {
+  color: #f6d69c;
+  font-weight: 700;
+}
+.action {
+  display: inline-block;
+  margin-top: 8px;
+}
+.feature {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  overflow: hidden;
+  margin-block: 22px;
+  border-radius: 16px;
+  background: #172744;
+  color: #f7f9ff;
+}
+.feature > div {
+  padding: clamp(20px, 4vw, 44px);
+}
+.feature > img {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 2 / 1;
+  object-fit: cover;
+}
+.feature a {
+  color: #f6d69c;
+}
+.feature h1 {
+  text-wrap: balance;
+}
+.feature [class~="pill"] {
+  background: #263b5d;
+  border-color: #8295b7;
+  color: #f7f9ff;
+}
+@media (min-width: 700px) {
+  .feature {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 44%);
+    align-items: stretch;
+  }
+  .feature > img {
+    height: 100%;
+    max-height: 380px;
+  }
+}
+
+.heroPanelBrand {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import styles from "@/components/ProgramImages.module.css";
 import Image from "next/image";
 import { formatRegistrationDeadline, getRegistrationDeadline, isRegistrationOpen } from "@/lib/registration";
 
@@ -138,10 +139,10 @@ export default async function AdvancedCertificatePage() {
 
           <aside className="hero-panel" aria-label="Program overview">
             <div className="hero-panel-top">
-              <span>Advanced Certificate</span>
+              <span className={styles.heroPanelBrand}><Image src="/assets/kti-brand-2026.png" alt="" width={42} height={28} /> Advanced Certificate</span>
               <span>Now enrolling</span>
             </div>
-            <Image className="hero-mark" src="/assets/kti-brand-2026.png" alt="KingsWord Training Institute — Advanced Certificate in Biblical Studies" width={1536} height={1024} sizes="(max-width: 760px) 90vw, 450px" loading="eager" />
+            <Image className="hero-mark" src="/assets/programs/advanced.webp" alt="" width={834} height={469} sizes="(max-width: 760px) 90vw, 450px" />
             <div className="hero-panel-intro">
               <span className="hero-panel-label">Your starting point</span>
               <div>

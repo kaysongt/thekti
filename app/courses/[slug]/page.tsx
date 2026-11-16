@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import Image from "next/image";
+import styles from "@/components/ProgramImages.module.css";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
@@ -57,18 +59,27 @@ export default async function CoursePage({ params }: Props) {
         {course.code}
       </div>
 
-      <header className="topichead">
-        {staffPreview ? <div className="notice">Course preview · explore course material without changing student progress or release dates.</div> : null}
-        <h1>{course.title}</h1>
-        <p className="deck">{course.subtitle}</p>
-        <div className="pillrow">
-          <span className="pill">{course.code}</span>
-          <span className="pill quiet">{module.hours_per_course} hours</span>
-          <span className="pill quiet">{rows.length} topics</span>
-          <span className={`pill ${allDone ? "ok" : "quiet"}`}>
-            {completed} of {rows.length} complete
-          </span>
+      <header className={styles.feature}>
+        <div>
+          {staffPreview ? <div className="notice">Course preview · explore course material without changing student progress or release dates.</div> : null}
+          <h1>{course.title}</h1>
+          <p className="deck">{course.subtitle}</p>
+          <div className="pillrow">
+            <span className="pill">{course.code}</span>
+            <span className="pill quiet">{module.hours_per_course} hours</span>
+            <span className="pill quiet">{rows.length} topics</span>
+            <span className={`pill ${allDone ? "ok" : "quiet"}`}>
+              {completed} of {rows.length} complete
+            </span>
+          </div>
         </div>
+        <Image
+          src={course.intro_video?.poster ?? "/assets/programs/academies.webp"}
+          alt=""
+          width={834}
+          height={469}
+          sizes="(max-width: 700px) 100vw, 540px"
+        />
       </header>
 
       <CourseBook slug={course.slug} />

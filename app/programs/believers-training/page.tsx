@@ -1,3 +1,5 @@
+import Image from "next/image";
+import styles from "@/components/ProgramImages.module.css";
 import Link from "next/link";
 
 export const metadata = {
@@ -10,11 +12,14 @@ const trainingOrigin = "https://seven-module-lms-beta.vercel.app";
 export default function BelieversTrainingPage() {
   return (
     <main className="shell" id="main-content" tabIndex={-1}>
-      <header className="pagehead">
-        <Link href="/programs">All programs</Link>
-        <h1>Believers Training</h1>
-        <p className="eyebrow">7 essential classes · 21 credit hours</p>
-        <p className="deck">Build a foundation for following Jesus in seven free video modules. Learn at your own pace or with your local church.</p>
+      <header className={styles.feature}>
+        <div>
+          <Link href="/programs">All programs</Link>
+          <h1>Believers Training</h1>
+          <p className={styles.meta}>7 essential classes · 21 credit hours</p>
+          <p className="deck">Build a foundation for following Jesus in seven free video modules. Learn at your own pace or with your local church.</p>
+        </div>
+        <Image src="/assets/programs/believers.webp" alt="" width={834} height={469} sizes="(max-width: 700px) 100vw, 540px" />
       </header>
       <div className="cards program-cards">
         <section className="card">

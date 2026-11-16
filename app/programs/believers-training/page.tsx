@@ -7,7 +7,15 @@ export const metadata = {
   description: "Study seven free video modules or download the printable final assessment for your local church.",
 };
 
-const trainingOrigin = "https://seven-module-lms-beta.vercel.app";
+const classes = [
+  { title: "The New Covenant", videoId: "0IWX-fwHmu0" },
+  { title: "Identity in Christ", videoId: "rebnFvX6r_8" },
+  { title: "The Word: The Agent of Change", videoId: "4CzCbnx0eEU" },
+  { title: "The Ministry of the Holy Spirit", videoId: "2EEpawrfzMM" },
+  { title: "Spiritual Authority and Prayer", videoId: "-zxEVgYMbeU" },
+  { title: "Purpose and Calling", videoId: "zRPiNwnmVbs" },
+  { title: "Stewardship and Missional Lifestyle", videoId: "RLbRya09Mn8" },
+];
 
 export default function BelieversTrainingPage() {
   return (
@@ -24,19 +32,39 @@ export default function BelieversTrainingPage() {
       <div className="cards program-cards">
         <section className="card">
           <h2 className="t">Study online</h2>
-          <p>Create a free account in the Believers Training portal to watch the modules, track your progress, and take the final assessment.</p>
+          <p>Watch all seven video classes for free on KTI.</p>
           <div className="foot">
-            <a className="btn primary" href={`${trainingOrigin}/believers-training`}>Start free online</a>
+            <a className="btn primary" href="#classes">Watch the classes</a>
           </div>
         </section>
         <section className="card">
           <h2 className="t">Give the assessment at your church</h2>
           <p>Enter your church’s name and location to download the printable 50-question final assessment. No sign-in is required.</p>
           <div className="foot">
-            <a className="btn primary" href={`${trainingOrigin}/final-assessment/print`}>Get the printable assessment</a>
+            <Link className="btn primary" href="/programs/believers-training/assessment">Get the printable assessment</Link>
           </div>
         </section>
       </div>
+      <section id="classes" aria-labelledby="classes-title">
+        <h2 id="classes-title">Believers Training classes</h2>
+        <p>Saved progress and the online final assessment are coming to KTI later.</p>
+        {classes.map(({ title, videoId }, index) => (
+          <section key={videoId} aria-labelledby={`bt-class-${index + 1}`}>
+            <h3 id={`bt-class-${index + 1}`}>Class {index + 1} · {title}</h3>
+            <div className="videoslot">
+              <div className="frame">
+                <iframe
+                  src={`https://www.youtube-nocookie.com/embed/${videoId}`}
+                  title={title}
+                  loading="lazy"
+                  allow="encrypted-media; picture-in-picture"
+                  allowFullScreen
+                />
+              </div>
+            </div>
+          </section>
+        ))}
+      </section>
     </main>
   );
 }

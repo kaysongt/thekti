@@ -12,10 +12,24 @@ const programs = [
   },
   {
     href: "/programs/advanced-certificate",
-    title: "Advanced Certificate in Biblical Studies",
+    title: "Advanced Certificate",
     image: "/assets/programs/advanced.webp",
     description: "Study theology, biblical foundations, the Old and New Testaments, and spiritual formation in a structured certificate program.",
     format: "Paid · One-year program",
+  },
+  {
+    href: "/programs#basic-certificates",
+    title: "Basic Certificate",
+    image: "/assets/programs/certificates.webp",
+    description: "Explore short-term Biblical Studies certificates for believers, ministry leaders, and church volunteers.",
+    format: "Coming soon · 50 credit hours",
+  },
+  {
+    href: "/programs#specialized-academies",
+    title: "Specialized Academy",
+    image: "/assets/programs/academies.webp",
+    description: "Explore focused training in prayer, faith, leadership, relationships, and other areas of Christian life.",
+    format: "Coming soon · 20 credit hours",
   },
 ];
 
@@ -30,7 +44,7 @@ export default function ProgramCatalog() {
               <p className={styles.meta}>{format}</p>
               <h2>{title}</h2>
               <p>{description}</p>
-              <span className={styles.action}>View program →</span>
+              <span className={styles.action}>Explore →</span>
             </div>
           </Link>
         </li>

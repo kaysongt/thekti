@@ -46,7 +46,7 @@ export default function ProgramsPage() {
         <header className={styles.feature}>
           <div>
             <h2 id="basic-certificates">Basic Certificate Programs</h2>
-            <p>Coming soon. Each short-term certificate covers 50 credit hours.</p>
+            <p>Coming soon. Each short-term certificate covers 50 program hours.</p>
           </div>
           <Image src="/assets/programs/certificates.webp" alt="" width={834} height={469} sizes="(max-width: 700px) 100vw, 540px" />
         </header>
@@ -64,7 +64,7 @@ export default function ProgramsPage() {
         <header className={styles.feature}>
           <div>
             <h2 id="specialized-academies">Specialized Academy Programs</h2>
-            <p>Coming soon. Each academy covers 20 credit hours and focuses on one subject.</p>
+            <p>Coming soon. Each academy covers 20 program hours and focuses on one subject.</p>
           </div>
           <Image src="/assets/programs/academies.webp" alt="" width={834} height={469} sizes="(max-width: 700px) 100vw, 540px" />
         </header>

@@ -2279,3 +2279,6 @@ main[tabindex="-1"]:focus { outline: none; }
 .program-cards > li > .card {
   height: 100%;
 }
+
+.hero .program-bubbles { padding-inline: 20px; }
+.hero .program-bubbles .btn { border-radius: 999px; }

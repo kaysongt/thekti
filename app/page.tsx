@@ -7,6 +7,12 @@ export default function HomePage() {
       <section className="hero">
         <h1>KingsWord Training Institute</h1>
         <p className="deck">Raising a supernatural army</p>
+        <nav className="cta-row program-bubbles" aria-label="Explore KTI programs">
+          <Link href="/programs/believers-training" className="btn lg gold">Believers Training</Link>
+          <Link href="/programs/advanced-certificate" className="btn lg gold">Advanced Certificate</Link>
+          <Link href="/programs#basic-certificates" className="btn lg gold">Basic Certificate</Link>
+          <Link href="/programs#specialized-academies" className="btn lg gold">Specialized Academy</Link>
+        </nav>
       </section>
       <section aria-labelledby="programs-heading">
         <h2 id="programs-heading">Choose a program</h2>

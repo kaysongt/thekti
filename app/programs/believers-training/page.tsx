@@ -24,7 +24,7 @@ export default function BelieversTrainingPage() {
         <div>
           <Link href="/programs">All programs</Link>
           <h1>Believers Training</h1>
-          <p className={styles.meta}>7 essential classes · 21 credit hours</p>
+          <p className={styles.meta}>7 essential classes · 21 program hours</p>
           <p className="deck">Build a foundation for following Jesus in seven free video modules. Learn at your own pace or with your local church.</p>
         </div>
         <Image src="/assets/programs/believers.webp" alt="" width={834} height={469} sizes="(max-width: 700px) 100vw, 540px" />

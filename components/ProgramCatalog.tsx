@@ -8,7 +8,7 @@ const programs = [
     title: "Believers Training",
     image: "/assets/programs/believers.webp",
     description: "Build a foundation for following Jesus through seven video modules. Study online or complete the training with your local church.",
-    format: "Free · 7 essential classes · 21 credit hours",
+    format: "Free · 7 essential classes · 21 program hours",
   },
   {
     href: "/programs/advanced-certificate",
@@ -22,14 +22,14 @@ const programs = [
     title: "Basic Certificate",
     image: "/assets/programs/certificates.webp",
     description: "Explore short-term Biblical Studies certificates for believers, ministry leaders, and church volunteers.",
-    format: "Coming soon · 50 credit hours",
+    format: "Coming soon · 50 program hours",
   },
   {
     href: "/programs#specialized-academies",
     title: "Specialized Academy",
     image: "/assets/programs/academies.webp",
     description: "Explore focused training in prayer, faith, leadership, relationships, and other areas of Christian life.",
-    format: "Coming soon · 20 credit hours",
+    format: "Coming soon · 20 program hours",
   },
 ];
 

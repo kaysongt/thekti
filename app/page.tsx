@@ -9,7 +9,7 @@ export default function HomePage() {
         <p className="deck">Raising a supernatural army</p>
         <nav className="cta-row program-bubbles" aria-label="Explore KTI programs">
           <Link href="/programs/believers-training" className="btn lg gold">Believers Training</Link>
-          <Link href="/programs/advanced-certificate" className="btn lg gold">Advanced Certificate</Link>
+          <Link href="/programs/advanced-certificate" className="btn lg gold">Advanced Certificates</Link>
           <Link href="/programs#basic-certificates" className="btn lg gold">Basic Certificates</Link>
           <Link href="/programs#specialized-academies" className="btn lg gold">Specialized Academy</Link>
         </nav>

@@ -19,10 +19,10 @@ const programs = [
   },
   {
     href: "/programs#basic-certificates",
-    title: "Basic Certificate",
+    title: "Basic Certificates",
     image: "/assets/programs/certificates.webp",
     description: "Explore short-term Biblical Studies certificates for believers, ministry leaders, and church volunteers.",
-    format: "Coming soon · 50 program hours",
+    format: "Coming soon · 40–50 program hours",
   },
   {
     href: "/programs#specialized-academies",

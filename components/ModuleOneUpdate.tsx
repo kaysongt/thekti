@@ -8,7 +8,7 @@ export default function ModuleOneUpdate() {
     </p>
     <section className="module-update" aria-labelledby="weekly-update-title">
       <div className="eyebrow">Student update · <time dateTime="2026-10-19">19 October 2026</time></div>
-      <h2 id="weekly-update-title">This week’s message from Dr. Kay</h2>
+      <h2 id="weekly-update-title">October 19 message from Dr. Kay</h2>
       <p>Dr. Kay encourages you to strengthen your understanding of the faith, use the written and audio resources together, and make time for your module thesis.</p>
       <video controls playsInline preload="none" width={1080} height={720} poster="/assets/kti-weekly-update-2026-10-19-poster.jpg" aria-label="Dr. Kay’s student update for 19 October 2026" aria-describedby="weekly-update-captions">
         <source src="/assets/kti-weekly-update-2026-10-19.mp4" type="video/mp4" />
@@ -17,7 +17,7 @@ export default function ModuleOneUpdate() {
       </video>
       <p className="hint" id="weekly-update-captions">English captions are available. Use the player’s CC or subtitles menu to show or hide them.</p>
       <div className="pillrow"><Link className="btn" href="/curriculum/01-systematic-theology">Continue Module 1</Link><Link className="btn quiet" href="/community/01-systematic-theology">Join the discussion</Link></div>
-      <details><summary>Key reminders from this week’s message</summary><ul>
+      <details><summary>Key reminders from the October 19 message</summary><ul>
         <li>Keep moving through the six Systematic Theology courses. If you are behind, set aside regular time to catch up.</li>
         <li>Read and listen together, and keep study notes to help you understand and apply what you learn.</li>
         <li>Participate in the community and complete your assessments carefully.</li>

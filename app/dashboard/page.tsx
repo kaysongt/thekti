@@ -182,6 +182,14 @@ export default async function DashboardPage({
       </div>
 
       <div data-tour="access"><LaunchAccessNotice signedIn /></div>
+      <section className="module-update" aria-labelledby="november-update-title">
+        <div className="eyebrow">Advanced Certificate · <time dateTime="2026-11-18">November 18, 2026</time></div>
+        <h2 id="november-update-title">This week’s student video</h2>
+        <video controls playsInline preload="metadata" width={816} height={540} aria-labelledby="november-update-title">
+          <source src="/assets/kti-student-update-2026-11-18.mp4" type="video/mp4" />
+        </video>
+        <p><a href="/assets/kti-student-update-2026-11-18.mp4">Open the video in a new page</a></p>
+      </section>
       <StudentWalkthrough />
       {trackedModules.map((module) => <StudentModuleProgress key={module.slug} module={module} progress={progress} assessments={assessmentRecords} preview={staffPreview} />)}
       {trackedModules.some((module) => module.number === 1) ? <ModuleOneUpdate /> : null}

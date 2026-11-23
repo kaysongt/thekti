@@ -1,70 +1,85 @@
+import Image from "next/image";
+import Link from "next/link";
+
+import Icon from "@/components/Icon";
 import { currentStudent } from "@/lib/auth";
+import { believersModules, believersPath } from "@/lib/believers-modules";
 import { db } from "@/lib/db";
 import { belongsToBelievers } from "@/lib/program-membership";
-import { believersModules, believersPath } from "@/lib/believers-modules";
-import Image from "next/image";
-import styles from "@/components/ProgramImages.module.css";
-import Link from "next/link";
+import { getProgram } from "@/lib/programs";
+import { buildBelievers } from "@/lib/student-hub";
 
 export const metadata = {
   title: "Believers Training",
-  description: "Study seven free video modules or download the printable final assessment for your local church.",
+  description: "Seven free online modules. Each ends with a 15-question assessment that unlocks the next. A printable final assessment is available for your church.",
 };
 
-
-
 export default async function BelieversTrainingPage() {
+  const program = getProgram("believers");
   const student = await currentStudent();
-  const enrolled = student && belongsToBelievers(await db.getEnrollmentsForStudent(student.id));
-  const results = enrolled ? await db.getBelieversResults(student.id) : [];
-  const scores = new Map(results.map((row) => [row.lessonId, row.correct]));
-  const next = believersModules.find((module) => !scores.has(module.slug));
+  const enrolled = Boolean(student && belongsToBelievers(await db.getEnrollmentsForStudent(student.id)));
+  const hub = enrolled && student ? buildBelievers(await db.getBelieversResults(student.id)) : null;
+
   return (
-    <main className="shell" id="main-content" tabIndex={-1}>
-      <header className={styles.feature}>
-        <div>
-          <Link href="/programs">All programs</Link>
-          <h1>Believers Training</h1>
-          <p className={styles.meta}>7 essential classes · 21 program hours</p>
-          <p className="deck">Build a foundation for following Jesus in seven free video modules. Learn at your own pace or with your local church.</p>
+    <main id="main-content" tabIndex={-1}>
+      <header className="band page-band program-hero">
+        <div className="wrap program-hero-grid">
+          <div>
+            <Link className="crumb" href="/programs">All programs</Link>
+            <h1>Believers Training</h1>
+            <p className="program-hero-meta"><span className="badge open">Open now</span><span>Free · 7 modules · {program.hoursLabel}</span></p>
+            {hub ? (
+              <div className="next-step on-band">
+                <div className="next-step-copy">
+                  <h2>{hub.next.context}</h2>
+                  <p>{hub.next.detail}</p>
+                </div>
+                <Link className="btn gold lg" href={hub.next.href}>{hub.next.label} <Icon name="arrow-right" className="arrow" /></Link>
+              </div>
+            ) : (
+              <>
+                <p className="deck">{program.fit} {program.next}</p>
+                <div className="action-row program-actions">
+                  {student ? (
+                    <Link className="btn gold lg" href="/enroll?program=believers-training">Join Believers Training · free</Link>
+                  ) : (
+                    <>
+                      <Link className="btn gold lg" href="/enroll?program=believers-training">Create a free account to start</Link>
+                      <Link className="btn ghost lg" href={`/login?next=${encodeURIComponent("/enroll?program=believers-training")}`}>Sign in to join</Link>
+                    </>
+                  )}
+                </div>
+              </>
+            )}
+          </div>
+          <Image className="program-hero-photo" src={program.image} alt={program.imageAlt} width={834} height={469} sizes="(max-width: 900px) 0px, 460px" />
         </div>
-        <Image src="/assets/programs/believers-2026.webp" alt="" width={834} height={469} sizes="(max-width: 700px) 100vw, 540px" />
       </header>
-      {enrolled ? <><div className="cards program-cards">
-        <section className="card">
-          <h2 className="t">Study online</h2>
-          <p>Complete 15 multiple-choice questions at the end of each module to unlock the next.</p>
-          <div className="foot">
-            <a className="btn primary" href="#classes">Explore the modules</a>
-          </div>
+
+      <div className="wrap section">
+        <section id="classes" aria-labelledby="modules-title">
+          <h2 id="modules-title" className="section-title">The seven modules</h2>
+          <ol className="bt-modules">
+            {(hub?.modules ?? believersModules.map((m) => ({ number: m.number, slug: m.slug, title: m.title, state: "locked" as const, score: null, href: `${believersPath}/${m.slug}` }))).map((m) => (
+              <li key={m.slug} className={`is-${hub ? m.state : "preview"}`}>
+                <span className="num">{m.number}</span>
+                <span className="bt-module-main">
+                  {hub && m.state !== "locked" ? <Link className="bt-module-title" href={m.href}>{m.title}</Link> : <span className="bt-module-title">{m.title}</span>}
+                  <span className="bt-module-state">
+                    {!hub ? "10 lessons and a 15-question assessment"
+                      : m.state === "completed" ? <>Assessment submitted · {m.score}/15 · <Link href={`${m.href}/assessment`}>Review answers</Link></>
+                      : m.state === "next" ? "Up next: 10 lessons, then a 15-question assessment"
+                      : `Unlocks after the Module ${m.number - 1} assessment`}
+                  </span>
+                </span>
+              </li>
+            ))}
+          </ol>
         </section>
-        <section className="card">
-          <h2 className="t">Give the assessment at your church</h2>
-          <p>Enter your church’s name and location to download the printable 50-question final assessment.</p>
-          <div className="foot">
-            <Link className="btn primary" href="/programs/believers-training/assessment">Get the printable assessment</Link>
-          </div>
-        </section>
+        {hub ? (
+          <p className="hint">Studying with your church? <Link href={`${believersPath}/assessment`}>Download the printable 50-question final assessment</Link>.</p>
+        ) : null}
       </div>
-      <section id="classes" aria-labelledby="classes-title">
-        <h2 id="classes-title">Your seven modules</h2>
-        <ol className="cards program-cards">
-          {believersModules.map((m) => <li className="card" key={m.slug}>
-            <p>Module {m.number} · 10 lessons and a review</p>
-            <h3>{m.title}</h3><p>{m.objectives[0]}</p>
-            {next && m.number > next.number ? <p>Locked · Complete the Module {m.number - 1} assessment to unlock.</p> : <>
-              {scores.has(m.slug) && <p>Assessment complete · {scores.get(m.slug)}/15</p>}
-              <Link className="btn primary" href={believersPath + "/" + m.slug}>Open module {m.number}</Link>
-            </>}
-          </li>)}
-        </ol>
-      </section>
-      </> : <section className="panel">
-        <h2>Start your training</h2>
-        <p>Join this free program to watch the classes and access the final assessment.</p>
-        <Link className="btn primary" href="/enroll?program=believers-training">Join Believers Training</Link>
-        {!student && <p>Already enrolled? <Link href="/login?next=/programs/believers-training">Sign in</Link></p>}
-      </section>}
     </main>
   );
 }

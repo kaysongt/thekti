@@ -120,15 +120,15 @@ export default async function DashboardPage({
 
   const { access, payment, password } = await searchParams;
   const { program, grading } = getCurriculum();
-  const [allEnrollments, progress, engagement, scholarshipApplications] = await Promise.all([
-    db.getEnrollmentsForStudent(student.id),
-    db.getProgress(student.id),
-    db.getCommunityEngagement(student.id),
-    db.getScholarshipApplicationsForStudent(student.id),
-  ]);
+  const allEnrollments = await db.getEnrollmentsForStudent(student.id);
   const enrolledInBelievers = belongsToBelievers(allEnrollments);
   const enrollments = currentAdvancedEnrollments(allEnrollments);
   const showAdvanced = enrollments.length > 0 || staffPreview;
+  const [progress, engagement, scholarshipApplications] = showAdvanced ? await Promise.all([
+    db.getProgress(student.id),
+    db.getCommunityEngagement(student.id),
+    db.getScholarshipApplicationsForStudent(student.id),
+  ]) : [[], { posts: 0, credits: 0 }, []] as const;
   const statuses = getModuleStatuses().filter(({ module }) => staffPreview ||
     enrollments.some((e) => e.product === "advanced" || e.product === module.slug) ||
     hasStudyAccess(student, enrollments, module.slug));

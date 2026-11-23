@@ -2,13 +2,13 @@ import Image from "next/image";
 import Link from "next/link";
 
 import Icon from "@/components/Icon";
-import { AVAILABILITY_LABELS, PROGRAMS, type ProgramSummary } from "@/lib/programs";
+import { ACADEMIES, AVAILABILITY_LABELS, PROGRAMS, type ProgramSummary } from "@/lib/programs";
 
 const ACTIONS: Record<ProgramSummary["key"], string> = {
   believers: "Explore Believers Training",
   advanced: "Explore the Advanced Certificate",
   basic: "See the six certificate tracks",
-  specialized: "Browse the academies",
+  specialized: `Browse all ${ACADEMIES.length} academies`,
 };
 
 export function ProgramStatus({ program }: { program: ProgramSummary }) {

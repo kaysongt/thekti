@@ -12,6 +12,9 @@ import type { Module } from "./curriculum";
 import { formatModuleReleaseDate, getCurriculum } from "./curriculum";
 import type { AssessmentSubmission, Enrollment, ProgressRecord, ScholarshipApplication, Student } from "./db/types";
 import { BELIEVERS, belongsToBelievers, currentAdvancedEnrollments } from "./program-membership";
+import believersModules from "../content/believers-training/modules.json";
+import { BASIC_TRACKS, SIX_TRACK_PASS, paidProgramByProduct } from "./catalog";
+import { ownsBasicPass } from "./programs";
 
 export type HubActionKind =
   | "start-lesson"
@@ -23,6 +26,10 @@ export type HubActionKind =
   | "contact"
   | "review"
   | "open-classes"
+  | "bt-module"
+  | "bt-final"
+  | "pay"
+  | "wait-classes"
   | "choose-program";
 
 export type HubAction = {
@@ -102,13 +109,31 @@ export type AdvancedHub = {
   recentFeedback: CourseResult[];
 };
 
+export type BelieversModuleState = "completed" | "next" | "locked";
+
 export type BelieversHub = {
   kind: "believers";
   title: string;
   next: HubAction;
+  completed: number;
+  modules: { number: number; slug: string; title: string; state: BelieversModuleState; score: number | null; href: string }[];
 };
 
-export type HubProgram = AdvancedHub | BelieversHub;
+/** A Basic Certificate track, a Specialized Academy, or the earlier six-track pass. */
+export type PaidHub = {
+  kind: "paid";
+  key: string;
+  title: string;
+  statusLabel: string;
+  status: "payment-due" | "enrolled" | "on-hold";
+  enrollmentId: string;
+  price: number;
+  next: HubAction;
+  /** For the six-track pass: the tracks it covers. */
+  covers?: { name: string; href: string }[];
+};
+
+export type HubProgram = AdvancedHub | BelieversHub | PaidHub;
 
 export type HubInput = {
   student: Pick<Student, "id">;
@@ -123,7 +148,36 @@ export type HubInput = {
   passMark?: number;
   contactEmail?: string;
   now?: Date;
+  /** Saved Believers Training module assessments: lessonId is the module slug. */
+  believersResults?: { lessonId: string | null; correct: number }[];
 };
+
+const BT_PATH = "/programs/believers-training";
+
+export function buildBelievers(results: HubInput["believersResults"] = []): BelieversHub {
+  const scores = new Map(results.filter((r) => r.lessonId).map((r) => [r.lessonId as string, r.correct]));
+  const nextModule = believersModules.find((m) => !scores.has(m.slug));
+  const modules = believersModules.map((m) => ({
+    number: m.number,
+    slug: m.slug,
+    title: m.title,
+    state: (scores.has(m.slug) ? "completed" : m === nextModule ? "next" : "locked") as BelieversModuleState,
+    score: scores.get(m.slug) ?? null,
+    href: `${BT_PATH}/${m.slug}`,
+  }));
+  const completed = modules.filter((m) => m.state === "completed").length;
+  const following = nextModule ? believersModules.find((m) => m.number === nextModule.number + 1) : undefined;
+  const next: HubAction = !nextModule
+    ? { kind: "bt-final", label: "Get the printable final assessment", context: "All seven modules complete", href: `${BT_PATH}/assessment`, detail: "All seven module assessments are submitted. Download the 50-question final assessment to take with your church." }
+    : {
+      kind: "bt-module",
+      label: `Start Module ${nextModule.number}`,
+      href: `${BT_PATH}/${nextModule.slug}`,
+      context: `Module ${nextModule.number} · ${nextModule.title}`,
+      detail: `Read the lessons, then submit all 15 answers in the Module ${nextModule.number} assessment${following ? ` to unlock Module ${following.number}` : " to finish the online modules"}.`,
+    };
+  return { kind: "believers", title: "Believers Training", next, completed, modules };
+}
 
 const RELEASE_HOUR_UTC = 11;
 const released = (module: Module, now: Date) => now.getTime() >= Date.parse(`${module.release_date}T${String(RELEASE_HOUR_UTC).padStart(2, "0")}:00:00.000Z`);
@@ -280,17 +334,49 @@ function buildAdvanced(input: HubInput, plan: Enrollment[]): AdvancedHub {
 
 export function buildStudentHub(input: HubInput): HubProgram[] {
   const programs: HubProgram[] = [];
-  if (belongsToBelievers(input.enrollments)) {
-    programs.push({
-      kind: "believers",
-      title: "Believers Training",
-      // Individual class progress is not recorded, so never claim to "resume".
-      next: { kind: "open-classes", label: "Open classes", href: "/programs/believers-training#classes", detail: "Seven video classes. Watch them in order, then take the printable assessment with your church." },
-    });
-  }
+  // Lesson reading is not recorded, so the next step names the module, never "resume".
+  if (belongsToBelievers(input.enrollments)) programs.push(buildBelievers(input.believersResults));
   const advanced = currentAdvancedEnrollments(input.enrollments).filter((e) => e.product !== BELIEVERS);
   if (advanced.length) programs.push(buildAdvanced(input, advanced));
+  programs.push(...buildPaid(input.enrollments));
   return programs;
+}
+
+const dollars = (amount: number) => "US$" + amount;
+
+/** Basic Certificate tracks, academies and the six-track pass, each with one action. */
+export function buildPaid(enrollments: Enrollment[]): PaidHub[] {
+  const out: PaidHub[] = [];
+  for (const e of enrollments) {
+    if (e.status !== "active" && e.status !== "pending") continue;
+    const isPass = e.product === SIX_TRACK_PASS.product;
+    const program = paidProgramByProduct(e.product);
+    if (!isPass && !program) continue;
+    // A track bought separately but also covered by the pass is shown once, under the pass.
+    if (!isPass && program?.kind === "basic" && ownsBasicPass(enrollments)) continue;
+    const title = isPass ? SIX_TRACK_PASS.name : program!.name;
+    const price = e.amount;
+    const onHold = e.status === "active" && Boolean(e.accessSuspendedAt);
+    const status: PaidHub["status"] = onHold ? "on-hold" : e.status === "active" ? "enrolled" : "payment-due";
+    const scope = isPass ? "all six tracks" : program!.kind === "basic" ? "this track" : "this academy";
+    const next: HubAction = status === "payment-due"
+      ? { kind: "pay", label: `Pay ${dollars(price)}`, href: "#pay-" + e.product, detail: `One-time tuition for ${scope}. Classes are coming soon, and they appear here when they open.` }
+      : status === "on-hold"
+        ? { kind: "contact", label: "Email KTI about your access", href: "mailto:kti@kingsword.org?subject=Program%20access", detail: "Access is paused while KTI reviews a payment." }
+        : { kind: "wait-classes", label: isPass ? "See your six tracks" : "Read what you will study", href: isPass ? "/programs/basic-certificates" : program!.href, detail: "You are enrolled. Classes have not opened yet. They will appear here when they open, with your first module as the next step." };
+    out.push({
+      kind: "paid",
+      key: e.product,
+      title,
+      status,
+      statusLabel: status === "payment-due" ? "Payment due" : status === "on-hold" ? "Access on hold" : "Enrolled · classes coming soon",
+      enrollmentId: e.id,
+      price,
+      next,
+      covers: isPass ? BASIC_TRACKS.map((t) => ({ name: t.name, href: t.href })) : undefined,
+    });
+  }
+  return out;
 }
 
 /** The empty state: no current enrollment. */

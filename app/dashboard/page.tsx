@@ -16,8 +16,8 @@ import { getCurriculum } from "@/lib/curriculum";
 import { db } from "@/lib/db";
 import { isCoursePreview } from "@/lib/learning-mode";
 import { paidProgramCheckoutReady } from "@/lib/payments/stripe-client";
-import { programOffer, BELIEVERS_CLASSES } from "@/lib/programs";
-import { currentAdvancedEnrollments } from "@/lib/program-membership";
+
+import { belongsToBelievers, currentAdvancedEnrollments } from "@/lib/program-membership";
 import {
   buildStudentHub,
   CHOOSE_PROGRAM_ACTION,
@@ -96,6 +96,10 @@ const ACTION_BUTTON: Record<HubAction["kind"], string> = {
   review: "Open the curriculum",
   "open-classes": "Open classes",
   "choose-program": "Browse programs",
+  "bt-module": "Open the module",
+  "bt-final": "Get the printable final assessment",
+  pay: "Pay tuition",
+  "wait-classes": "Read what you will study",
 };
 
 const BADGE_FOR_STATE: Record<ModuleState, string> = {
@@ -112,14 +116,13 @@ function NextStep({ action, tour }: { action: HubAction; tour?: boolean }) {
   const external = action.href.startsWith("mailto:");
   const button = (
     <>
-      {ACTION_BUTTON[action.kind]} <Icon name="arrow-right" className="arrow" />
+      {action.context ? action.label : ACTION_BUTTON[action.kind]} <Icon name="arrow-right" className="arrow" />
     </>
   );
   return (
     <div className="next-step" data-tour={tour ? "next-step" : undefined}>
       <div className="next-step-copy">
-        {action.context ? <p className="next-step-context">{action.context}</p> : null}
-        <h3>{action.label}</h3>
+        <h3>{action.context ?? action.label}</h3>
         <p>{action.detail}</p>
       </div>
       {external || action.href.startsWith("#") ? (
@@ -197,7 +200,7 @@ function ResultsPanel({ hub, passMark }: { hub: AdvancedHub; passMark: number })
             <div>
               <strong>{latest.code} result: {latest.score}% · {latest.assessment === "passed" ? "Passed" : `below the ${passMark}% pass mark`}</strong>
               {latest.feedback ? <blockquote className="hub-feedback">{latest.feedback}</blockquote> : null}
-              <Link href={`/courses/${latest.courseSlug}/assessment`}>{latest.assessment === "passed" ? "View the full result" : "Retake the assessment"}</Link>
+              <Link href={`/courses/${latest.courseSlug}/assessment`}>{latest.feedback ? "Read instructor feedback" : latest.assessment === "passed" ? "View the full result" : "Retake the assessment"}</Link>
             </div>
           </li>
         ) : null}
@@ -209,7 +212,7 @@ function ResultsPanel({ hub, passMark }: { hub: AdvancedHub; passMark: number })
 export default async function DashboardPage({
   searchParams,
 }: {
-  searchParams: Promise<{ access?: string; payment?: string; password?: string }>;
+  searchParams: Promise<{ access?: string; payment?: string; password?: string; program?: string }>;
 }) {
   const student = await currentStudent();
   if (!student) redirect("/login");
@@ -219,13 +222,9 @@ export default async function DashboardPage({
     ? "Pastor Godfrey"
     : nameParts[0];
 
-  const { access, payment, password } = await searchParams;
+  const { access, payment, password, program: requestedProgram } = await searchParams;
   const { program, grading } = getCurriculum();
   const allEnrollments = await db.getEnrollmentsForStudent(student.id);
-  const purchases = allEnrollments.flatMap((enrollment) => {
-    const offer = programOffer(enrollment.product);
-    return offer && ["pending", "active"].includes(enrollment.status) ? [{ offer, enrollment }] : [];
-  });
   const advancedEnrollments = currentAdvancedEnrollments(allEnrollments);
   const inAdvanced = advancedEnrollments.length > 0;
 
@@ -238,6 +237,7 @@ export default async function DashboardPage({
       db.getCommunityEngagement(student.id),
     ])
     : [[], [], [], { posts: 0, credits: 0 }];
+  const believersResults = belongsToBelievers(allEnrollments) ? await db.getBelieversResults(student.id) : [];
 
   const courseStatuses = inAdvanced ? getCourseStatuses() : [];
   const courseReady = new Set(courseStatuses.filter((status) => status.complete).map((status) => status.course.slug));
@@ -256,7 +256,12 @@ export default async function DashboardPage({
     lessonTitles,
     passMark: grading.pass_mark,
     contactEmail: program.contact.email,
+    believersResults,
   });
+  // One program at a time: the switcher picks which one, defaulting to the first.
+  const keyOf = (item: (typeof programs)[number]) => (item.kind === "paid" ? item.key : item.kind);
+  const selected = programs.find((item) => keyOf(item) === requestedProgram) ?? programs[0];
+  const shown = selected ? [selected] : [];
 
   const ministerWaiver = hasMinisterWaiver(advancedEnrollments);
   const pending = ministerWaiver ? [] : advancedEnrollments.filter((e) => e.status === "pending");
@@ -266,22 +271,30 @@ export default async function DashboardPage({
   const passwordMessage = password ? passwordMessages[password] : null;
   const accessMessage = access ? accessMessages[access] : null;
   const multiple = programs.length > 1;
+  const statusOf = (item: (typeof programs)[number]) =>
+    item.kind === "believers" ? (item.completed === 7 ? "All 7 modules complete" : `${item.completed} of 7 modules complete`)
+      : item.kind === "paid" ? item.statusLabel
+        : item.enrollmentStatus === "active" ? `Enrolled · ${item.planLabel}` : item.enrollmentStatus === "pending" ? "Payment due" : "Access on hold";
+  const nameOf = (item: (typeof programs)[number]) => (item.kind === "advanced" ? "Advanced Certificate in Biblical Studies" : item.title);
 
   return (
     <main id="main-content" tabIndex={-1} className="hub">
       <header className="band hub-head">
         <div className="wrap">
           <h1>Welcome, {greetingName}</h1>
-          {programs.length ? (
-            <nav className="hub-programs" aria-label="Your programs" data-tour="programs">
-              {programs.map((item) => (
-                <a key={item.kind} href={`#program-${item.kind}`} className="hub-program-chip">
-                  <span>{item.kind === "believers" ? "Believers Training" : "Advanced Certificate"}</span>
-                  <small>{item.kind === "believers" ? "Free · open now" : item.planLabel}</small>
-                </a>
-              ))}
+          {multiple ? (
+            <nav className="hub-programs" aria-label="Switch program" data-tour="programs">
+              {programs.map((item) => {
+                const current = item === selected;
+                return (
+                  <Link key={keyOf(item)} href={`/dashboard?program=${keyOf(item)}`} className="hub-program-chip" aria-current={current ? "page" : undefined} scroll={false}>
+                    <span>{nameOf(item)}</span>
+                    <small>{statusOf(item)}</small>
+                  </Link>
+                );
+              })}
             </nav>
-          ) : (
+          ) : selected ? null : (
             <p className="deck">You are signed in as {student.email}.</p>
           )}
         </div>
@@ -314,46 +327,80 @@ export default async function DashboardPage({
           </section>
         ) : null}
 
-        {!programs.length && !purchases.length && !staffPreview ? (
+        {!programs.length && !staffPreview ? (
           <section className="hub-program hub-empty" aria-labelledby="empty-title">
             <h2 id="empty-title">You have not joined a program yet</h2>
             <p>Choose a program to start studying. Believers Training is free and opens as soon as you join. The Advanced Certificate enrolls by intake; its page shows whether registration is open.</p>
             <NextStep action={CHOOSE_PROGRAM_ACTION} tour />
-            <p><Link href="/programs#program-believers">Compare program hours and availability</Link></p>
+            <p><Link href="/programs">Compare programs, prices and availability</Link></p>
           </section>
         ) : null}
 
-        {purchases.length > 0 && payment && paymentMessages[payment] && <p role="status">{paymentMessages[payment].text}</p>}
-        {purchases.map(({ offer, enrollment }) => <section key={enrollment.id} id={"program-" + offer.product} className="hub-program">
-          <h2>{offer.title}</h2>
-          {enrollment.accessSuspendedAt ? <p>Access is suspended. Contact KTI for help.</p> : enrollment.status === "active" ?
-            <p>Your enrollment is active. Classes are coming soon.</p> : <>
-              <p>One-time tuition · US${offer.amount}. Classes are coming soon.</p>
-              {paidProgramCheckoutReady(offer.product) ? <form action={beginStripeCheckout}><input type="hidden" name="enrollmentId" value={enrollment.id} /><button className="btn primary">Pay US${offer.amount}</button></form> : offer.product === "basic-certificates" ? <Link href="/programs#basic-certificates">Choose an individual certificate</Link> : <p>Checkout is coming soon.</p>}
-            </>}
-        </section>)}
-        {programs.map((item, index) => item.kind === "believers" ? (
+        {shown.map((item, index) => item.kind === "paid" ? (
+          <section key={item.key} id={`program-${item.key}`} className="hub-program" aria-labelledby={`title-${item.key}`}>
+            <div className="hub-program-head">
+              <h2 id={`title-${item.key}`}>{item.title}</h2>
+              <span className={`badge ${item.status === "payment-due" ? "payment" : item.status === "on-hold" ? "hold" : "open"}`}>{item.statusLabel}</span>
+            </div>
+            {payment === "unavailable" ? (
+              <div className="notice bad" role="status">Card payment is temporarily unavailable. Nothing was charged. Please try again shortly, or email kti@kingsword.org.</div>
+            ) : payment && paymentMessages[payment] ? <div className={`notice ${paymentMessages[payment].tone}`} role="status">{paymentMessages[payment].text}</div> : null}
+            {item.status === "payment-due" ? (
+              <div className="next-step" id={`pay-${item.key}`} data-tour={index === 0 ? "next-step" : undefined}>
+                <div className="next-step-copy">
+                  <h3>Tuition due · US${item.price} one-time</h3>
+                  <p>{item.next.detail}</p>
+                </div>
+                {paidProgramCheckoutReady(item.key) ? (
+                  <form action={beginStripeCheckout}>
+                    <input type="hidden" name="enrollmentId" value={item.enrollmentId} />
+                    <button type="submit" className="btn gold lg">Pay US${item.price} <Icon name="arrow-right" className="arrow" /></button>
+                  </form>
+                ) : item.key === "basic-certificates" ? (
+                  <Link className="btn gold lg" href="/programs/basic-certificates">Choose one track instead</Link>
+                ) : (
+                  <p className="next-step-note">Online payment for this program opens soon. Email kti@kingsword.org to pay another way.</p>
+                )}
+              </div>
+            ) : (
+              <NextStep action={{ ...item.next, context: item.status === "enrolled" ? "Classes coming soon" : undefined }} tour={index === 0} />
+            )}
+            {item.covers ? (
+              <section aria-labelledby={`covers-${item.key}`} data-tour="modules">
+                <h3 id={`covers-${item.key}`}>Your pass covers all six tracks</h3>
+                <ul className="covered-list">
+                  {item.covers.map((track) => <li key={track.href}><Icon name="check-circle" /><Link href={track.href}>{track.name}</Link></li>)}
+                </ul>
+                <p className="hint">You won’t be asked to pay for any of these tracks again.</p>
+              </section>
+            ) : null}
+          </section>
+        ) : item.kind === "believers" ? (
           <section key="believers" id="program-believers" className="hub-program" aria-labelledby="believers-title">
             <div className="hub-program-head">
               <h2 id="believers-title">Believers Training</h2>
-              <span className="badge open">Enrolled</span>
+              <span className="badge open">{item.completed} of 7 modules</span>
             </div>
             <NextStep action={item.next} tour={index === 0} />
-            <div className="hub-believers" data-tour="believers-path">
-              <div>
-                <h3>Your seven-class path</h3>
-                <ol className="hub-class-list">
-                  {BELIEVERS_CLASSES.map((lesson, n) => (
-                    <li key={lesson.videoId}><Link href={`/programs/believers-training#class-${n + 1}`}><span className="num">{n + 1}</span>{lesson.title}</Link></li>
-                  ))}
-                </ol>
-              </div>
-              <div className="hub-side-card">
-                <h3>Printable final assessment</h3>
-                <p>Download the 50-question assessment to give at your local church. You enter your church’s name and location first.</p>
-                <Link className="btn quiet" href="/programs/believers-training/assessment" data-tour="believers-assessment"><Icon name="download" /> Get the assessment</Link>
-              </div>
-            </div>
+            <section aria-labelledby="bt-modules-title" data-tour="believers-path">
+              <h3 id="bt-modules-title">Your seven modules</h3>
+              <ol className="bt-modules">
+                {item.modules.map((m) => (
+                  <li key={m.slug} className={`is-${m.state}`}>
+                    <span className="num">{m.number}</span>
+                    <span className="bt-module-main">
+                      {m.state === "locked" ? <span className="bt-module-title">{m.title}</span> : <Link className="bt-module-title" href={m.href}>{m.title}</Link>}
+                      <span className="bt-module-state">
+                        {m.state === "completed" ? <>Assessment submitted · {m.score}/15 · <Link href={`${m.href}/assessment`}>Review answers</Link></>
+                          : m.state === "next" ? "Up next: 10 lessons, then a 15-question assessment"
+                          : `Unlocks after the Module ${m.number - 1} assessment`}
+                      </span>
+                    </span>
+                  </li>
+                ))}
+              </ol>
+            </section>
+            <p className="hint">Studying with your church? <Link href="/programs/believers-training/assessment" data-tour="believers-assessment">Download the printable 50-question final assessment</Link>.</p>
           </section>
         ) : (
           <section key="advanced" id="program-advanced" className="hub-program" aria-labelledby="advanced-title">

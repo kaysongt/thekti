@@ -16,6 +16,9 @@ export const metadata = {
 export default async function BelieversTrainingPage() {
   const student = await currentStudent();
   const enrolled = student && belongsToBelievers(await db.getEnrollmentsForStudent(student.id));
+  const results = enrolled ? await db.getBelieversResults(student.id) : [];
+  const scores = new Map(results.map((row) => [row.lessonId, row.correct]));
+  const next = believersModules.find((module) => !scores.has(module.slug));
   return (
     <main className="shell" id="main-content" tabIndex={-1}>
       <header className={styles.feature}>
@@ -30,7 +33,7 @@ export default async function BelieversTrainingPage() {
       {enrolled ? <><div className="cards program-cards">
         <section className="card">
           <h2 className="t">Study online</h2>
-          <p>Study seven modules with teaching videos, student manuals, and lesson audio.</p>
+          <p>Complete 15 multiple-choice questions at the end of each module to unlock the next.</p>
           <div className="foot">
             <a className="btn primary" href="#classes">Explore the modules</a>
           </div>
@@ -49,7 +52,10 @@ export default async function BelieversTrainingPage() {
           {believersModules.map((m) => <li className="card" key={m.slug}>
             <p>Module {m.number} · 10 lessons and a review</p>
             <h3>{m.title}</h3><p>{m.objectives[0]}</p>
-            <Link className="btn primary" href={believersPath + "/" + m.slug}>Open module {m.number}</Link>
+            {next && m.number > next.number ? <p>Locked · Complete the Module {m.number - 1} assessment to unlock.</p> : <>
+              {scores.has(m.slug) && <p>Assessment complete · {scores.get(m.slug)}/15</p>}
+              <Link className="btn primary" href={believersPath + "/" + m.slug}>Open module {m.number}</Link>
+            </>}
           </li>)}
         </ol>
       </section>

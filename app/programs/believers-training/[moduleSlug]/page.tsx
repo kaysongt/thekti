@@ -31,6 +31,10 @@ export default async function ModulePage({ params }: { params: Promise<{ moduleS
         </li>)}</ol>
         {m.closing.map((t) => <details key={t.id}><summary>{t.title} audio</summary><BelieversAudio id={t.id} title={t.title + " audio"} /></details>)}
       </section>
+      <section><h2>Module assessment</h2>
+        <p>Answer all 15 questions to complete this module.</p>
+        <Link className="btn primary" href={believersPath + "/" + m.slug + "/assessment"}>Open assessment</Link>
+      </section>
     </main>
   );
 }

@@ -229,7 +229,10 @@ export interface DataStore {
   getLatestTimedQuiz(studentId: string, courseSlug: string, lessonId: string | null): Promise<import("../timed-quiz").TimedQuiz | null>;
   getTimedQuiz(id: string, studentId: string): Promise<import("../timed-quiz").TimedQuiz | null>;
   finishTimedQuiz(input: { id: string; studentId: string; correct: number; total: number; scorePct: number; passed: boolean; answers: unknown; sectionAPoints?: number }): Promise<{ status: "saved" | "expired" | "used"; submissionId?: string }>;
+  getBelieversResults(studentId: string): Promise<{ lessonId: string | null; correct: number }[]>;
   createQuizAttempt(input: {
+    /** Stable key for single-submission module assessments. */
+    id?: string;
     studentId: string;
     courseSlug: string;
     lessonId: string | null;

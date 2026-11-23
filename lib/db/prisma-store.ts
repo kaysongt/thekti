@@ -631,22 +631,24 @@ export const prismaStore: DataStore = {
     });
   },
 
+  async getBelieversResults(studentId) {
+    return prisma.quizAttempt.findMany({
+      where: { studentId, courseSlug: "believers-training", total: 15 },
+      select: { lessonId: true, correct: true },
+      orderBy: { createdAt: "asc" },
+    });
+  },
+
   async createQuizAttempt(input) {
-    return mapQuizAttempt(
-      await prisma.quizAttempt.create({
-        data: {
-          studentId: input.studentId,
-          courseSlug: input.courseSlug,
-          lessonId: input.lessonId,
-          kind: quizKindToPrisma[input.kind],
-          correct: input.correct,
-          total: input.total,
-          scorePct: input.scorePct,
-          passed: input.passed,
-          answers: jsonValue(input.answers),
-        },
-      })
-    );
+    const data = {
+      studentId: input.studentId, courseSlug: input.courseSlug, lessonId: input.lessonId,
+      kind: quizKindToPrisma[input.kind], correct: input.correct, total: input.total,
+      scorePct: input.scorePct, passed: input.passed, answers: jsonValue(input.answers),
+    };
+    const row = input.id
+      ? await prisma.quizAttempt.upsert({ where: { id: input.id }, create: { ...data, id: input.id }, update: {} })
+      : await prisma.quizAttempt.create({ data });
+    return mapQuizAttempt(row);
   },
 
   async getLatestAssessmentQuestionIds(studentId, courseSlug) {

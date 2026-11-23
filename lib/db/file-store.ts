@@ -484,11 +484,20 @@ export const fileStore: DataStore = {
     return { status: "saved", submissionId: submission?.id };
   },
 
+  async getBelieversResults(studentId) {
+    const data = await read();
+    return data.quizAttempts.filter((attempt) =>
+      attempt.studentId === studentId && attempt.courseSlug === "believers-training" && attempt.total === 15
+    ).map(({ lessonId, correct }) => ({ lessonId, correct }));
+  },
+
   async createQuizAttempt(input): Promise<QuizAttempt> {
     const data = await read();
+    const previous = input.id && data.quizAttempts.find((attempt) => attempt.id === input.id);
+    if (previous) return previous;
     const attempt: QuizAttempt = {
       ...input,
-      id: randomUUID(),
+      id: input.id ?? randomUUID(),
       createdAt: new Date().toISOString(),
     };
     data.quizAttempts.push(attempt);

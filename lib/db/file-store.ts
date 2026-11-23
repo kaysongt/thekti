@@ -166,7 +166,7 @@ export const fileStore: DataStore = {
       ...enrollmentInput,
       studentId: student.id,
       id: randomUUID(),
-      activatedAt: null,
+      activatedAt: enrollmentInput.status === "active" ? new Date().toISOString() : null,
       accessSuspendedAt: null,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
@@ -234,6 +234,22 @@ export const fileStore: DataStore = {
     if (!student) return;
     student.role = role;
     await write(data);
+  },
+
+  async joinProgram(input) {
+    return withScholarshipReviewLock(async () => {
+      const data = await read();
+      const provider = "self-enrollment";
+      const providerRef = input.studentId + "/" + input.product;
+      const existing = data.enrollments.find((e) => e.provider === provider && e.providerRef === providerRef);
+      if (existing) return existing;
+      const now = new Date().toISOString();
+      const enrollment = { ...input, id: randomUUID(), provider, providerRef, activatedAt: input.status === "active" ? now : null,
+        accessSuspendedAt: null, createdAt: now, updatedAt: now };
+      data.enrollments.push(enrollment);
+      await write(data);
+      return enrollment;
+    });
   },
 
   async createEnrollment(input: NewEnrollment): Promise<Enrollment> {

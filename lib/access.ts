@@ -1,3 +1,4 @@
+import { currentAdvancedEnrollments } from "./program-membership";
 import type { Enrollment, Student } from "./db/types";
 import { getCurriculum, isModuleReleased } from "./curriculum";
 
@@ -48,7 +49,8 @@ export function hasStudyAccess(
   if (!student?.id) return false;
   if (hasActiveAccess(enrollments, moduleSlug)) return true;
   const first = getCurriculum().modules[0];
-  return Boolean(first && moduleSlug === first.slug && isModuleReleased(first, now));
+  return Boolean(first && moduleSlug === first.slug && isModuleReleased(first, now) &&
+    currentAdvancedEnrollments(enrollments).some((e) => !e.accessSuspendedAt));
 }
 
 /** A place reserved at registration, still waiting on tuition. */
@@ -61,9 +63,10 @@ export function hasUnpaidEnrollment(enrollments: Enrollment[]): boolean {
  * registered before checkout existed land here and are sent to payment at login.
  */
 export function mustPayBeforeStudying(enrollments: Enrollment[]): boolean {
+  const advanced = currentAdvancedEnrollments(enrollments);
   return (
-    hasUnpaidEnrollment(enrollments) &&
-    !enrollments.some(
+    hasUnpaidEnrollment(advanced) &&
+    !advanced.some(
       (enrollment) => enrollment.status === "active" && !enrollment.accessSuspendedAt
     )
   );

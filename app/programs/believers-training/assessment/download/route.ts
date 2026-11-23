@@ -1,3 +1,6 @@
+import { currentStudent } from "@/lib/auth";
+import { db } from "@/lib/db";
+import { belongsToBelievers } from "@/lib/program-membership";
 import { z } from "zod";
 
 const churchDetails = z.object({
@@ -8,6 +11,9 @@ const churchDetails = z.object({
 const noStore = { "Cache-Control": "no-store" };
 
 export async function POST(request: Request) {
+  const student = await currentStudent();
+  if (!student) return new Response("Sign in to download the assessment.", { status: 401, headers: noStore });
+  if (!belongsToBelievers(await db.getEnrollmentsForStudent(student.id))) return new Response("Join Believers Training to download the assessment.", { status: 403, headers: noStore });
   const form = await request.formData().catch(() => null);
   const details = churchDetails.safeParse({
     church: form?.get("church"),

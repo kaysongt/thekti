@@ -189,6 +189,7 @@ export interface DataStore {
   updateStudentRole(studentId: string, role: StudentRole): Promise<void>;
 
   // enrollments
+  joinProgram(input: NewEnrollment): Promise<Enrollment>;
   createEnrollment(input: NewEnrollment): Promise<Enrollment>;
   getEnrollmentsForStudent(studentId: string): Promise<Enrollment[]>;
   activateEnrollment(id: string, providerRef: string, provider?: string): Promise<Enrollment | null>;

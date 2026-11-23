@@ -1,3 +1,4 @@
+import { belongsToBelievers, currentAdvancedEnrollments } from "@/lib/program-membership";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -119,13 +120,18 @@ export default async function DashboardPage({
 
   const { access, payment, password } = await searchParams;
   const { program, grading } = getCurriculum();
-  const [enrollments, progress, engagement, scholarshipApplications] = await Promise.all([
+  const [allEnrollments, progress, engagement, scholarshipApplications] = await Promise.all([
     db.getEnrollmentsForStudent(student.id),
     db.getProgress(student.id),
     db.getCommunityEngagement(student.id),
     db.getScholarshipApplicationsForStudent(student.id),
   ]);
-  const statuses = getModuleStatuses();
+  const enrolledInBelievers = belongsToBelievers(allEnrollments);
+  const enrollments = currentAdvancedEnrollments(allEnrollments);
+  const showAdvanced = enrollments.length > 0 || staffPreview;
+  const statuses = getModuleStatuses().filter(({ module }) => staffPreview ||
+    enrollments.some((e) => e.product === "advanced" || e.product === module.slug) ||
+    hasStudyAccess(student, enrollments, module.slug));
 
   const ministerWaiver = hasMinisterWaiver(enrollments);
   const pending = ministerWaiver ? [] : enrollments.filter((e) => e.status === "pending");
@@ -181,7 +187,26 @@ export default async function DashboardPage({
         </p>
       </div>
 
-      <div data-tour="access"><LaunchAccessNotice signedIn /></div>
+      {isStaff(student) ? (
+        <Link href="/admin" className="staff-entry">
+          <span className="staff-entry-label">
+            {student.role === "admin" ? "Administrator" : "Staff"} access
+          </span>
+          <strong>Open operations</strong>
+          <span className="staff-entry-hint">
+            Registrations, payments, scholarships, grading, and every account on the course.
+          </span>
+        </Link>
+      ) : null}
+      <section aria-labelledby="my-programs">
+        <h2 id="my-programs">My programs</h2>
+        {enrolledInBelievers && <p><Link href="/programs/believers-training#classes">Continue Believers Training</Link></p>}
+        {enrollments.length > 0 && <p><a href="#advanced-study">Advanced Certificate studies</a></p>}
+        {!enrolledInBelievers && !showAdvanced && <p>Choose a program to begin.</p>}
+        <Link href="/programs">Browse all programs</Link>
+      </section>
+      {showAdvanced && <>
+      <div id="advanced-study" data-tour="access"><LaunchAccessNotice signedIn /></div>
       <section className="module-update" aria-labelledby="november-update-title">
         <div className="eyebrow">Advanced Certificate · <time dateTime="2026-11-18">November 18, 2026</time></div>
         <h2 id="november-update-title">This week’s student video</h2>
@@ -197,18 +222,6 @@ export default async function DashboardPage({
         <div className={`notice ${accessMessage.tone}`} role="alert">
           {accessMessage.text}
         </div>
-      ) : null}
-
-      {isStaff(student) ? (
-        <Link href="/admin" className="staff-entry">
-          <span className="staff-entry-label">
-            {student.role === "admin" ? "Administrator" : "Staff"} access
-          </span>
-          <strong>Open operations</strong>
-          <span className="staff-entry-hint">
-            Registrations, payments, scholarships, grading, and every account on the course.
-          </span>
-        </Link>
       ) : null}
 
       {/*
@@ -567,6 +580,7 @@ export default async function DashboardPage({
         </Link>
       </section>
 
+      </>}
       <section className="panel" id="password" style={{ marginTop: 44, scrollMarginTop: 90 }}>
         <h2>Change your password</h2>
         <p>

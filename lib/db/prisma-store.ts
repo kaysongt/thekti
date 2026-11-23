@@ -272,7 +272,8 @@ export const prismaStore: DataStore = {
           studentId: student.id,
           product: enrollmentInput.product,
           plan: planToPrisma[enrollmentInput.plan],
-          status: PrismaEnrollmentStatus.PENDING,
+          status: enrollmentInput.status === "active" ? PrismaEnrollmentStatus.ACTIVE : PrismaEnrollmentStatus.PENDING,
+          activatedAt: enrollmentInput.status === "active" ? new Date() : null,
           amount: enrollmentInput.amount,
           currency: enrollmentInput.currency,
           provider: enrollmentInput.provider,
@@ -333,6 +334,22 @@ export const prismaStore: DataStore = {
       where: { id: studentId },
       data: { role: roleToPrisma[role] },
     });
+  },
+
+  async joinProgram(input) {
+    const provider = "self-enrollment";
+    const providerRef = input.studentId + "/" + input.product;
+    const status = input.status === "active" ? PrismaEnrollmentStatus.ACTIVE : PrismaEnrollmentStatus.PENDING;
+    const row = await prisma.enrollment.upsert({
+      where: { provider_providerRef: { provider, providerRef } },
+      create: {
+        studentId: input.studentId, product: input.product, plan: planToPrisma[input.plan],
+        amount: input.amount, currency: input.currency, status, provider, providerRef,
+        activatedAt: input.status === "active" ? new Date() : null,
+      },
+      update: {},
+    });
+    return mapEnrollment(row);
   },
 
   async createEnrollment(input) {

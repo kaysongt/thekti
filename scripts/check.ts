@@ -1014,7 +1014,10 @@ async function main() {
     assert.equal(hasStudyAccess(null, pending, module.slug, launch), false);
     assert.equal(hasStudyAccess(visitor, pending, module.slug, new Date("2026-10-01T10:59:59Z")), false);
     assert.equal(hasStudyAccess(visitor, pending, module.slug, launch), true);
-    assert.equal(hasStudyAccess(visitor, [], module.slug, launch), true);
+    assert.equal(hasStudyAccess(visitor, [], module.slug, launch), false);
+    const freeProgram = { ...enrollmentBase, status: "active" as const, product: "believers-training" };
+    assert.equal(hasStudyAccess(visitor, [freeProgram], module.slug, launch), false);
+    assert.equal(hasStudyAccess(visitor, [freeProgram, ...pending], module.slug, launch), true);
     assert.equal(hasStudyAccess(visitor, pending, curriculum.modules[1].slug, new Date("2026-12-01T11:00:00Z")), false);
     for (const provider of ["minister-waiver", "scholarship", "manual", "stripe"]) assert.equal(hasStudyAccess(visitor, [{ ...enrollmentBase, status: "active", provider }], curriculum.modules[1].slug, launch), true);
     assert.equal(JSON.stringify(pending), before);

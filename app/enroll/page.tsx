@@ -3,6 +3,8 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { formatRegistrationDeadline, getRegistrationDeadline, isRegistrationOpen } from "@/lib/registration";
 
+import { BELIEVERS, belongsToBelievers } from "@/lib/program-membership";
+import { db } from "@/lib/db";
 import { currentStudent } from "@/lib/auth";
 import { getModuleStatuses } from "@/lib/content";
 import { formatModuleReleaseDate, getCurriculum } from "@/lib/curriculum";
@@ -15,9 +17,17 @@ export const metadata: Metadata = { title: "Enroll" };
 export default async function EnrollPage({
   searchParams,
 }: {
-  searchParams: Promise<{ plan?: string; scholarship?: string }>;
+  searchParams: Promise<{ program?: string; plan?: string; scholarship?: string }>;
 }) {
-  if (await currentStudent()) redirect("/dashboard");
+  const student = await currentStudent();
+  const { program: selected, plan, scholarship } = await searchParams;
+  if (selected === BELIEVERS) {
+    if (student && belongsToBelievers(await db.getEnrollmentsForStudent(student.id))) redirect("/programs/believers-training#classes");
+    return <main className="shell" id="main-content"><div className="authwrap"><div className="authcard">
+      <h1>Join Believers Training</h1><p>Seven free classes and a printable final assessment.</p>
+      <EnrollForm free signedIn={Boolean(student)} initialPlan="advanced" modules={[]} scholarshipIntent={false} />
+    </div></div></main>;
+  }
   const deadline = await getRegistrationDeadline();
   const deadlineLabel = formatRegistrationDeadline(deadline);
   if (!isRegistrationOpen(new Date(), deadline)) return (
@@ -31,7 +41,7 @@ export default async function EnrollPage({
     </main>
   );
 
-  const { plan, scholarship } = await searchParams;
+
 
   const { program } = getCurriculum();
   const modules = getModuleStatuses().map((s) => ({
@@ -53,7 +63,7 @@ export default async function EnrollPage({
           <h1>Enroll</h1>
           <div className="notice good"><strong>Registration is open.</strong> Sign up before {deadlineLabel}.</div>
           <p className="sub">
-            Create your account for the {program.title}. Choose a single certificate or reserve
+            Enroll in the {program.title}. Choose a single certificate or reserve
             your place in the full program.
           </p>
 
@@ -81,6 +91,7 @@ export default async function EnrollPage({
           ) : null}
 
           <EnrollForm
+            signedIn={Boolean(student)}
             initialPlan={initialPlan}
             modules={modules}
             scholarshipIntent={scholarshipIntent}

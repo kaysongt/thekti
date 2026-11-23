@@ -1,3 +1,6 @@
+import { currentStudent } from "@/lib/auth";
+import { db } from "@/lib/db";
+import { belongsToBelievers } from "@/lib/program-membership";
 import Image from "next/image";
 import styles from "@/components/ProgramImages.module.css";
 import Link from "next/link";
@@ -17,7 +20,9 @@ const classes = [
   { title: "Stewardship and Missional Lifestyle", videoId: "RLbRya09Mn8" },
 ];
 
-export default function BelieversTrainingPage() {
+export default async function BelieversTrainingPage() {
+  const student = await currentStudent();
+  const enrolled = student && belongsToBelievers(await db.getEnrollmentsForStudent(student.id));
   return (
     <main className="shell" id="main-content" tabIndex={-1}>
       <header className={styles.feature}>
@@ -29,7 +34,7 @@ export default function BelieversTrainingPage() {
         </div>
         <Image src="/assets/programs/believers.webp" alt="" width={834} height={469} sizes="(max-width: 700px) 100vw, 540px" />
       </header>
-      <div className="cards program-cards">
+      {enrolled ? <><div className="cards program-cards">
         <section className="card">
           <h2 className="t">Study online</h2>
           <p>Watch all seven video classes for free on KTI.</p>
@@ -39,7 +44,7 @@ export default function BelieversTrainingPage() {
         </section>
         <section className="card">
           <h2 className="t">Give the assessment at your church</h2>
-          <p>Enter your church’s name and location to download the printable 50-question final assessment. No sign-in is required.</p>
+          <p>Enter your church’s name and location to download the printable 50-question final assessment.</p>
           <div className="foot">
             <Link className="btn primary" href="/programs/believers-training/assessment">Get the printable assessment</Link>
           </div>
@@ -65,6 +70,12 @@ export default function BelieversTrainingPage() {
           </section>
         ))}
       </section>
+      </> : <section className="panel">
+        <h2>Start your training</h2>
+        <p>Join this free program to watch the classes and access the final assessment.</p>
+        <Link className="btn primary" href="/enroll?program=believers-training">Join Believers Training</Link>
+        {!student && <p>Already enrolled? <Link href="/login?next=/programs/believers-training">Sign in</Link></p>}
+      </section>}
     </main>
   );
 }

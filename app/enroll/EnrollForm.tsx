@@ -21,7 +21,7 @@ function Submit({ label }: { label: string }) {
   const { pending } = useFormStatus();
   return (
     <button type="submit" className="btn primary lg" disabled={pending} style={{ width: "100%" }}>
-      {pending ? "Creating your account…" : label}
+      {pending ? "Submitting…" : label}
     </button>
   );
 }
@@ -30,9 +30,13 @@ type ModuleOption = { slug: string; title: string; available: boolean; availabil
 
 export default function EnrollForm({
   initialPlan,
+  free = false,
+  signedIn = false,
   modules,
   scholarshipIntent,
 }: {
+  free?: boolean;
+  signedIn?: boolean;
   initialPlan: "certificate" | "advanced";
   modules: ModuleOption[];
   scholarshipIntent: boolean;
@@ -47,6 +51,7 @@ export default function EnrollForm({
       {scholarshipIntent ? <input type="hidden" name="scholarshipIntent" value="apply" /> : null}
       {state.error ? <div className="notice bad" role="alert">{state.error}</div> : null}
 
+      {free ? <input type="hidden" name="program" value="believers-training" /> : <>
       <div className="field">
         <label htmlFor="plan">What are you enrolling in?</label>
         <select
@@ -79,6 +84,8 @@ export default function EnrollForm({
         </div>
       ) : null}
 
+      </>}
+      {!signedIn && <>
       <div className={`field${err.fullName ? " err" : ""}`}>
         <label htmlFor="fullName">Full name</label>
         <input
@@ -135,6 +142,7 @@ export default function EnrollForm({
         {err.password ? <div className="msg">{err.password}</div> : null}
       </div>
 
+      </>}
       <div className="form-trap" aria-hidden="true">
         <label htmlFor="website" aria-hidden="true">
           Website
@@ -168,12 +176,12 @@ export default function EnrollForm({
       </div>
 
       <Submit
-        label={scholarshipIntent ? "Create account and continue application" : "Create my account"}
+        label={signedIn ? "Confirm enrollment" : scholarshipIntent ? "Create account and continue application" : "Create my account"}
       />
 
-      <p className="formfoot">
-        Already enrolled? <Link href="/login">Sign in</Link>
-      </p>
+      {!signedIn && <p className="formfoot">
+        Already enrolled? <Link href={free ? "/login?next=/enroll%3Fprogram%3Dbelievers-training" : "/login?next=/enroll"}>Sign in</Link>
+      </p>}
     </form>
   );
 }

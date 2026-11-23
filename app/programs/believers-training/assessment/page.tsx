@@ -1,3 +1,7 @@
+import { currentStudent } from "@/lib/auth";
+import { db } from "@/lib/db";
+import { belongsToBelievers } from "@/lib/program-membership";
+import { redirect } from "next/navigation";
 import Link from "next/link";
 
 export const metadata = {
@@ -5,7 +9,10 @@ export const metadata = {
   robots: { index: false },
 };
 
-export default function PrintableAssessmentPage() {
+export default async function PrintableAssessmentPage() {
+  const student = await currentStudent();
+  if (!student) redirect("/login?next=/programs/believers-training/assessment");
+  if (!belongsToBelievers(await db.getEnrollmentsForStudent(student.id))) redirect("/enroll?program=believers-training");
   return (
     <main className="shell" id="main-content" tabIndex={-1}>
       <header className="pagehead">

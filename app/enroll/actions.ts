@@ -3,7 +3,9 @@
 import { redirect } from "next/navigation";
 import { z } from "zod";
 
-import { hashPassword, startSession } from "@/lib/auth";
+import { BELIEVERS } from "@/lib/program-membership";
+import type { NewEnrollmentForStudent } from "@/lib/db/types";
+import { currentStudent, hashPassword, startSession } from "@/lib/auth";
 import { getPurchasableModules } from "@/lib/content";
 import { PRICING } from "@/lib/curriculum";
 import { db } from "@/lib/db";
@@ -33,9 +35,13 @@ export async function registerStudent(
   _previous: FormState,
   formData: FormData
 ): Promise<FormState> {
-  const deadline = await getRegistrationDeadline();
-  if (!isRegistrationOpen(new Date(), deadline)) {
-    return { error: "Registration is closed. Existing students can still sign in. For help, email kti@kingsword.org." };
+  const free = formData.get("program") === BELIEVERS;
+  const session = await currentStudent();
+  if (!free) {
+    const deadline = await getRegistrationDeadline();
+    if (!isRegistrationOpen(new Date(), deadline)) {
+      return { error: "Registration is closed. Existing students can still sign in. For help, email kti@kingsword.org." };
+    }
   }
   const scholarshipIntentEntry = formData.get("scholarshipIntent");
   const raw = {
@@ -62,7 +68,8 @@ export async function registerStudent(
   if (raw.website.trim()) {
     return { error: "We could not create your enrollment. Please try again." };
   }
-  const parsed = registrationSchema.safeParse(raw);
+  const schema = session ? registrationSchema.omit({ fullName: true, email: true, password: true, country: true }) : registrationSchema;
+  const parsed = schema.safeParse(raw);
   const fieldErrors: Record<string, string> = {};
   if (!parsed.success) {
     for (const issue of parsed.error.issues) {
@@ -72,9 +79,9 @@ export async function registerStudent(
     return { fieldErrors, values };
   }
 
-  const { fullName, email, country, password, plan, product, scholarshipIntent } = parsed.data;
+  const { plan, product, scholarshipIntent } = parsed.data;
   const purchasableProducts = new Set(getPurchasableModules().map((module) => module.slug));
-  if (plan === "certificate" && !purchasableProducts.has(product)) {
+  if (!free && plan === "certificate" && !purchasableProducts.has(product)) {
     return {
       fieldErrors: { product: "Please choose a certificate from the published program." },
       values,
@@ -83,32 +90,30 @@ export async function registerStudent(
 
   let studentId: string;
   try {
-    if (await db.getStudentByEmail(email)) {
-      return {
-        fieldErrors: { email: "An account with this email already exists." },
-        values,
-      };
-    }
-
     const price = plan === "advanced" ? PRICING.advanced : PRICING.certificate;
-    const { student } = await db.createStudentWithEnrollment(
-      {
-        fullName,
-        email,
-        country,
-        passwordHash: await hashPassword(password),
-      },
-      {
-        product: plan === "advanced" ? "advanced" : product,
-        plan,
-        status: "pending",
-        amount: price.amount,
-        currency: price.currency,
-        provider: null,
-        providerRef: null,
+    const enrollment: NewEnrollmentForStudent = {
+      product: free ? BELIEVERS : plan === "advanced" ? "advanced" : product,
+      plan: free ? "certificate" : plan,
+      status: free ? "active" : "pending", amount: free ? 0 : price.amount, currency: price.currency,
+      provider: null, providerRef: null,
+    };
+    if (session) {
+      studentId = session.id;
+      const records = await db.getEnrollmentsForStudent(studentId);
+      const existing = records.find((e) => (e.product === enrollment.product || (!free && e.product === "advanced")) && (e.status === "active" || e.status === "pending"));
+      if (!existing) await db.joinProgram({ ...enrollment, studentId });
+      else if (existing.accessSuspendedAt) return { error: "Please contact KTI about your suspended access." };
+    } else {
+      const account = registrationSchema.parse(raw);
+      if (await db.getStudentByEmail(account.email)) {
+        return { fieldErrors: { email: "This account already exists. Sign in to enroll." }, values };
       }
-    );
-    studentId = student.id;
+      const { student } = await db.createStudentWithEnrollment({
+        fullName: account.fullName, country: account.country, email: account.email,
+        passwordHash: await hashPassword(account.password),
+      }, enrollment);
+      studentId = student.id;
+    }
   } catch (error) {
     if (error instanceof StorageUnavailableError) {
       return {
@@ -119,6 +124,7 @@ export async function registerStudent(
     return { error: "We could not create your enrollment. Please try again.", values };
   }
 
-  await startSession(studentId);
+  if (!session) await startSession(studentId);
+  if (free) redirect("/programs/believers-training#classes");
   redirect(scholarshipIntent === "apply" ? "/scholarship" : "/dashboard");
 }

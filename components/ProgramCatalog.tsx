@@ -8,7 +8,7 @@ const ACTIONS: Record<ProgramSummary["key"], string> = {
   believers: "Explore Believers Training",
   advanced: "Explore the Advanced Certificate",
   basic: "See the six certificate tracks",
-  specialized: "See the sixteen academies",
+  specialized: "Browse the academies",
 };
 
 export function ProgramStatus({ program }: { program: ProgramSummary }) {

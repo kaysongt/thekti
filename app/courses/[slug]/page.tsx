@@ -114,7 +114,7 @@ export default async function CoursePage({ params }: Props) {
               height={course.intro_video.height ?? undefined}
               controls
               playsInline
-              preload="metadata"
+              preload="none"
               aria-label={course.intro_video.title ?? `Introducing ${course.title}`}
             />
           </div>

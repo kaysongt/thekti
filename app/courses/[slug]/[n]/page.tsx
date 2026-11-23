@@ -8,7 +8,9 @@ import { entitlementRedirectPath, hasStudyAccess } from "@/lib/access";
 import { currentStudent } from "@/lib/auth";
 import { isCoursePreview } from "@/lib/learning-mode";
 import LearningModeBanner from "@/components/LearningModeBanner";
-import { getCourseStatuses, getLesson, getLessonRows } from "@/lib/content";
+import { getCourseAudio, getCourseStatuses, getLesson, getLessonRows } from "@/lib/content";
+import Icon from "@/components/Icon";
+import { getCourseBook } from "@/lib/course-materials";
 import { findCourse, getCurriculum, lessonId } from "@/lib/curriculum";
 import { db } from "@/lib/db";
 import { earlierLessonsComplete } from "@/lib/learning-progress";
@@ -67,53 +69,62 @@ export default async function TopicPage({ params }: Props) {
   const hasQuiz = lesson.html.includes('class="quiz"');
   const alreadyPassed = !staffPreview && await db.hasPassingTopicAttempt(student.id, row.id);
   const chapter = row.reading;
+  const book = getCourseBook(course.slug);
+  const audio = getCourseAudio(course.slug);
 
   return (
     <main className="shell" id="main-content" tabIndex={-1}>
       <LearningModeBanner student={student} preview={staffPreview} />
       <div className="topicwrap">
-      <div className="breadcrumb">
-        <Link href={`/curriculum/${module.slug}`}>{module.short_title}</Link>
-        <span className="sep">/</span>
-        <Link href={`/courses/${course.slug}`}>{course.code}</Link>
-        <span className="sep">/</span>
-        Topic {index}
-      </div>
+      <header className="lesson-head">
+        <nav className="lesson-crumbs" aria-label="Breadcrumb">
+          <Link href={`/curriculum/${module.slug}`}>Module {module.numeral} · {module.short_title}</Link>
+          <Icon name="chevron-right" />
+          <Link href={`/courses/${course.slug}`}>{course.code} · {course.title}</Link>
+        </nav>
+        <h1>{row.title}</h1>
+        <div className="lesson-meta">
+          <span className={`badge ${done.has(row.id) ? "done" : "open"}`}>{done.has(row.id) ? "Completed" : "In progress"}</span>
+          <span className="num">Topic {index} of {rows.length}</span>
+          <span>{row.duration}</span>
+          {chapter ? <span>{chapter}</span> : null}
+        </div>
+        <div className="lesson-materials" aria-label="Lesson materials">
+          {book ? <a className="btn sm quiet" href={book.viewUrl} target="_blank" rel="noopener noreferrer"><Icon name="book" /> Textbook</a> : null}
+          {audio ? <Link className="btn sm quiet" href={`/courses/${course.slug}#audio-library-title`}><Icon name="play" /> Audiobook</Link> : null}
+          <a className="btn sm quiet" href="#discussion"><Icon name="message" /> Discussion</a>
+        </div>
+        <p className="lesson-next">
+          <strong>Your next action:</strong>{" "}
+          {done.has(row.id)
+            ? nextRow ? <>continue to <Link href={`/courses/${slug}/${nextRow.n}`}>Topic {nextRow.n}, {nextRow.title}</Link>.</> : <>take the <Link href={`/courses/${slug}/assessment`}>{course.code} course assessment</Link>.</>
+            : <>read the lesson, pass the quiz at {grading.pass_mark}%, then select <a href="#mark-complete">Mark complete</a> to unlock {nextRow ? `Topic ${nextRow.n}` : "the course assessment"}.</>}
+        </p>
+      </header>
 
-      <div className="topicbar">
+      <nav className="topicbar" aria-label={`${course.code} topics`}>
         {rows.map((r) => {
           const isDone = done.has(r.id);
           const locked =
             !staffPreview && !earlierLessonsComplete(rows, r.n, done);
           if (r.n === index) {
             return (
-              <span className="cur" key={r.id}>
-                {r.n}
+              <span className="cur" key={r.id} aria-current="page">
+                {r.n}<span className="sr-only"> (current topic)</span>
               </span>
             );
           }
           return locked ? (
             <span className="lock" key={r.id} title="Complete the previous topic first">
-              {r.n}
+              {r.n}<span className="sr-only"> (locked)</span>
             </span>
           ) : (
-            <Link href={`/courses/${course.slug}/${r.n}`} className={isDone ? "done" : ""} key={r.id}>
+            <Link href={`/courses/${course.slug}/${r.n}`} className={isDone ? "done" : ""} key={r.id} aria-label={`Topic ${r.n}: ${r.title}${isDone ? " (completed)" : ""}`}>
               {r.n}
             </Link>
           );
         })}
-      </div>
-
-      <header className="topichead">
-        <h1>{row.title}</h1>
-        <div className="pillrow">
-          <span className="pill">
-            Topic {index} of {rows.length}
-          </span>
-          {chapter ? <span className="pill chapter">{chapter}</span> : null}
-          <span className="pill quiet">{row.duration}</span>
-        </div>
-      </header>
+      </nav>
 
       <TopicReader
         preview={staffPreview}

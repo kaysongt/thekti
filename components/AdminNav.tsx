@@ -7,8 +7,10 @@ import { ADMIN_NAV_ITEMS, isAdminRouteActive } from "@/lib/admin-navigation";
 
 export default function AdminNav({
   pendingScholarshipCount,
+  pendingGradingCount = 0,
 }: {
   pendingScholarshipCount: number;
+  pendingGradingCount?: number;
 }) {
   const pathname = usePathname();
 
@@ -16,7 +18,8 @@ export default function AdminNav({
     <nav className="admin-tabs" aria-label="Staff operations sections">
       {ADMIN_NAV_ITEMS.map((item) => {
         const active = isAdminRouteActive(pathname, item.href);
-        const showCount = item.href === "/admin/scholarships" && pendingScholarshipCount > 0;
+        const count = item.href === "/admin/scholarships" ? pendingScholarshipCount : item.href === "/admin/grading" ? pendingGradingCount : 0;
+        const showCount = count > 0;
         return (
           <Link
             key={item.href}
@@ -26,7 +29,7 @@ export default function AdminNav({
           >
             {item.label}
             {showCount ? (
-              <span className="admin-tab-count">{pendingScholarshipCount}</span>
+              <span className="admin-tab-count">{count}</span>
             ) : null}
           </Link>
         );

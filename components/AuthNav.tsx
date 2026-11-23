@@ -44,7 +44,7 @@ export default function AuthNav() {
         {session.staff ? (
           <Link href="/admin">{session.admin ? "Admin" : "Staff"}</Link>
         ) : null}
-        <Link href="/dashboard" className="btn primary" style={{ marginLeft: 6 }}>
+        <Link href="/dashboard" className="btn gold sm">
           My studies
         </Link>
       </>
@@ -53,10 +53,8 @@ export default function AuthNav() {
 
   return (
     <>
-      <Link href="/login">Sign in</Link>
-      <Link href="/enroll" className="btn primary" style={{ marginLeft: 6 }}>
-        Enroll
-      </Link>
+      <Link href="/login" className="btn ghost sm nav-signin">Sign in</Link>
+      <Link href="/programs" className="btn gold sm nav-join">Join a program</Link>
     </>
   );
 }

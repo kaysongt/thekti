@@ -17,7 +17,7 @@ export default function Masthead() {
     <header className="masthead">
       <div className="inner">
         <Link className="wordmark" href="/" aria-label="KingsWord Training Institute — home">
-          <Image className="mark" src="/assets/kti-brand-2026.png" alt="" width={1536} height={1024} sizes="96px" loading="eager" />
+          <Image className="mark" src="/assets/kti-brand-2026.png" alt="" width={1536} height={1024} sizes="72px" priority />
           <span className="wm-txt">
             <span className="kw">KingsWord</span> Training Institute
           </span>
@@ -25,7 +25,7 @@ export default function Masthead() {
         <nav className="mastnav" aria-label="Main navigation">
           <PrimaryNav />
           <AuthNav />
-          <ThemeToggle />
+          <span className="mast-theme"><ThemeToggle /></span>
         </nav>
       </div>
     </header>

@@ -44,7 +44,10 @@ export async function signIn(_previous: LoginState, formData: FormData): Promise
   // Students who registered before checkout was live owe tuition. Send them
   // straight to payment instead of wherever they were heading — but only once
   // they can actually pay, so a missing Stripe configuration never strands them.
-  if (!canPreviewCourses(student) && isStripeCheckoutConfigured()) {
+  // A student signing in to finish a specific task (joining a program, opening
+  // a download) goes back to that task; the payment prompt waits on My studies.
+  const headingToStudy = next === "/dashboard" || /^\/(courses|curriculum)\//.test(next);
+  if (headingToStudy && !canPreviewCourses(student) && isStripeCheckoutConfigured()) {
     const enrollments = await db.getEnrollmentsForStudent(student.id);
     if (!hasStudyAccess(student, enrollments, getCurriculum().modules[0].slug) && mustPayBeforeStudying(enrollments)) redirect("/dashboard?payment=required");
   }

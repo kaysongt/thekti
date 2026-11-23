@@ -9,7 +9,7 @@ import { signIn, type LoginState } from "./actions";
 function Submit() {
   const { pending } = useFormStatus();
   return (
-    <button type="submit" className="btn primary lg" disabled={pending} style={{ width: "100%" }}>
+    <button type="submit" className="btn primary lg block" disabled={pending}>
       {pending ? "Signing in…" : "Sign in"}
     </button>
   );
@@ -47,7 +47,7 @@ export default function LoginForm({ next }: { next: string }) {
       <p className="formfoot"><Link href="/forgot-password">Forgot password?</Link></p>
 
       <p className="formfoot">
-        Not enrolled yet? <Link href={next.includes("believers-training") ? "/enroll?program=believers-training" : "/enroll"}>Enroll in the program</Link>
+        New to KTI? {next.startsWith("/enroll") ? <Link href={next}>Create an account instead</Link> : <Link href="/programs">Choose a program to create an account</Link>}
       </p>
       <p className="formfoot formfoot-secondary">
         Password help: <a href="mailto:kti@kingsword.org?subject=KTI%20password%20help">contact the KTI team</a>

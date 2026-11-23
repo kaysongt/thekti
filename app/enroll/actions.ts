@@ -106,7 +106,7 @@ export async function registerStudent(
     } else {
       const account = registrationSchema.parse(raw);
       if (await db.getStudentByEmail(account.email)) {
-        return { fieldErrors: { email: "This account already exists. Sign in to enroll." }, values };
+        return { fieldErrors: { email: "An account with this email already exists." }, values };
       }
       const { student } = await db.createStudentWithEnrollment({
         fullName: account.fullName, country: account.country, email: account.email,

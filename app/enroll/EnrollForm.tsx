@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useActionState, useState } from "react";
 import { useFormStatus } from "react-dom";
 
+import Icon from "@/components/Icon";
+
 import { registerStudent, type FormState } from "./actions";
 
 const COUNTRIES = [
@@ -20,7 +22,7 @@ const COUNTRIES = [
 function Submit({ label }: { label: string }) {
   const { pending } = useFormStatus();
   return (
-    <button type="submit" className="btn primary lg" disabled={pending} style={{ width: "100%" }}>
+    <button type="submit" className="btn primary lg block" disabled={pending} aria-disabled={pending}>
       {pending ? "Submitting…" : label}
     </button>
   );
@@ -34,20 +36,25 @@ export default function EnrollForm({
   signedIn = false,
   modules,
   scholarshipIntent,
+  returnPath = "/enroll",
 }: {
   free?: boolean;
   signedIn?: boolean;
   initialPlan: "certificate" | "advanced";
   modules: ModuleOption[];
   scholarshipIntent: boolean;
+  /** Where sign-in should bring this person back to, so they finish joining. */
+  returnPath?: string;
 }) {
   const [state, action] = useActionState<FormState, FormData>(registerStudent, {});
   const [plan, setPlan] = useState(initialPlan);
 
   const err = state.fieldErrors ?? {};
+  const signInHref = `/login?next=${encodeURIComponent(returnPath)}`;
   const val = state.values ?? {};
   return (
-    <form action={action}>
+    // Remount after each response so selects and checkboxes show the submitted values again.
+    <form action={action} key={state.values ? JSON.stringify(state.values) : "initial"}>
       {scholarshipIntent ? <input type="hidden" name="scholarshipIntent" value="apply" /> : null}
       {state.error ? <div className="notice bad" role="alert">{state.error}</div> : null}
 
@@ -68,7 +75,7 @@ export default function EnrollForm({
       {plan === "certificate" ? (
         <div className={`field${err.product ? " err" : ""}`}>
           <label htmlFor="product">Which certificate?</label>
-          <select id="product" name="product" defaultValue={val.product ?? ""} required>
+          <select id="product" aria-invalid={err.product ? true : undefined} aria-describedby={err.product ? "product-error" : undefined} name="product" defaultValue={val.product ?? ""} required>
             <option value="">Select a certificate…</option>
             {modules.map((m) => (
               <option key={m.slug} value={m.slug}>
@@ -80,7 +87,7 @@ export default function EnrollForm({
           <div className="hint">
             You may enroll and pay now. Study access begins on the published opening date.
           </div>
-          {err.product ? <div className="msg">{err.product}</div> : null}
+          {err.product ? <div className="msg" id="product-error"><Icon name="alert" />{err.product}</div> : null}
         </div>
       ) : null}
 
@@ -89,7 +96,7 @@ export default function EnrollForm({
       <div className={`field${err.fullName ? " err" : ""}`}>
         <label htmlFor="fullName">Full name</label>
         <input
-          id="fullName"
+          id="fullName" aria-invalid={err.fullName ? true : undefined} aria-describedby={err.fullName ? "fullName-error" : undefined}
           name="fullName"
           defaultValue={val.fullName ?? ""}
           autoComplete="name"
@@ -97,13 +104,13 @@ export default function EnrollForm({
           maxLength={100}
           required
         />
-        {err.fullName ? <div className="msg">{err.fullName}</div> : null}
+        {err.fullName ? <div className="msg" id="fullName-error"><Icon name="alert" />{err.fullName}</div> : null}
       </div>
 
       <div className={`field${err.email ? " err" : ""}`}>
         <label htmlFor="email">Email address</label>
         <input
-          id="email"
+          id="email" aria-invalid={err.email ? true : undefined} aria-describedby={err.email ? "email-error" : undefined}
           name="email"
           type="email"
           defaultValue={val.email ?? ""}
@@ -111,12 +118,12 @@ export default function EnrollForm({
           maxLength={254}
           required
         />
-        {err.email ? <div className="msg">{err.email}</div> : null}
+        {err.email ? <div className="msg" id="email-error"><Icon name="alert" /><span>{err.email}{err.email.includes("already exists") ? <> <Link href={signInHref}>Sign in to continue joining</Link>.</> : null}</span></div> : null}
       </div>
 
       <div className={`field${err.country ? " err" : ""}`}>
         <label htmlFor="country">Country</label>
-        <select id="country" name="country" defaultValue={val.country ?? ""} required>
+        <select id="country" aria-invalid={err.country ? true : undefined} aria-describedby={err.country ? "country-error" : undefined} name="country" defaultValue={val.country ?? ""} required>
           <option value="">Select your country…</option>
           {COUNTRIES.map((c) => (
             <option key={c} value={c}>
@@ -124,13 +131,13 @@ export default function EnrollForm({
             </option>
           ))}
         </select>
-        {err.country ? <div className="msg">{err.country}</div> : null}
+        {err.country ? <div className="msg" id="country-error"><Icon name="alert" />{err.country}</div> : null}
       </div>
 
       <div className={`field${err.password ? " err" : ""}`}>
         <label htmlFor="password">Password</label>
         <input
-          id="password"
+          id="password" aria-invalid={err.password ? true : undefined} aria-describedby={err.password ? "password-error" : undefined}
           name="password"
           type="password"
           autoComplete="new-password"
@@ -139,7 +146,7 @@ export default function EnrollForm({
           required
         />
         <div className="hint">At least 10 characters.</div>
-        {err.password ? <div className="msg">{err.password}</div> : null}
+        {err.password ? <div className="msg" id="password-error"><Icon name="alert" />{err.password}</div> : null}
       </div>
 
       </>}
@@ -160,7 +167,7 @@ export default function EnrollForm({
       <div className={`field consent-field${err.privacyAccepted ? " err" : ""}`}>
         <label className="consent-row" htmlFor="privacyAccepted">
           <input
-            id="privacyAccepted"
+            id="privacyAccepted" aria-invalid={err.privacyAccepted ? true : undefined} aria-describedby={err.privacyAccepted ? "privacyAccepted-error" : undefined}
             name="privacyAccepted"
             type="checkbox"
             value="yes"
@@ -172,15 +179,15 @@ export default function EnrollForm({
             registration and learning records are used.
           </span>
         </label>
-        {err.privacyAccepted ? <div className="msg">{err.privacyAccepted}</div> : null}
+        {err.privacyAccepted ? <div className="msg" id="privacyAccepted-error"><Icon name="alert" />{err.privacyAccepted}</div> : null}
       </div>
 
       <Submit
-        label={signedIn ? "Confirm enrollment" : scholarshipIntent ? "Create account and continue application" : "Create my account"}
+        label={signedIn ? (free ? "Join Believers Training" : "Join this program") : scholarshipIntent ? "Create account and continue application" : free ? "Create account and join" : "Create account and enroll"}
       />
 
       {!signedIn && <p className="formfoot">
-        Already enrolled? <Link href={free ? "/login?next=/enroll%3Fprogram%3Dbelievers-training" : "/login?next=/enroll"}>Sign in</Link>
+        Already have a KTI account? <Link href={signInHref}>Sign in to join</Link>
       </p>}
     </form>
   );

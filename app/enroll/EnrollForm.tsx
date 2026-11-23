@@ -34,6 +34,7 @@ export default function EnrollForm({
   initialPlan,
   free = false,
   offerProduct,
+  offerLabel,
   signedIn = false,
   modules,
   scholarshipIntent,
@@ -41,6 +42,8 @@ export default function EnrollForm({
 }: {
   free?: boolean;
   offerProduct?: string;
+  /** Price shown on the submit button for a paid program, e.g. "US$250". */
+  offerLabel?: string;
   signedIn?: boolean;
   initialPlan: "certificate" | "advanced";
   modules: ModuleOption[];
@@ -185,7 +188,7 @@ export default function EnrollForm({
       </div>
 
       <Submit
-        label={signedIn ? (free ? "Join Believers Training" : "Join this program") : scholarshipIntent ? "Create account and continue application" : free ? "Create account and join" : "Create account and enroll"}
+        label={offerProduct ? (signedIn ? `Reserve my place · ${offerLabel ?? ""}`.trim() : `Create account and continue to payment`) : signedIn ? (free ? "Join Believers Training" : "Join this program") : scholarshipIntent ? "Create account and continue application" : free ? "Create account and join" : "Create account and enroll"}
       />
 
       {!signedIn && <p className="formfoot">

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useEffect, useRef, useState } from "react";
 
 const STORAGE_KEY = "kti.student-walkthrough.v2";
 const CHANGE_EVENT = "kti-walkthrough-change";
@@ -23,23 +23,6 @@ export const WALKTHROUGH_STEPS = [
 
 const selector = (target: string) => `[data-tour='${target}']`;
 
-function subscribe(onChange: () => void) {
-  window.addEventListener("storage", onChange);
-  window.addEventListener(CHANGE_EVENT, onChange);
-  return () => {
-    window.removeEventListener("storage", onChange);
-    window.removeEventListener(CHANGE_EVENT, onChange);
-  };
-}
-
-function readSeen(): boolean {
-  try {
-    return window.localStorage.getItem(STORAGE_KEY) === "complete";
-  } catch {
-    return true;
-  }
-}
-
 function markSeen() {
   try {
     window.localStorage.setItem(STORAGE_KEY, "complete");
@@ -52,15 +35,14 @@ function markSeen() {
 type Box = { top: number; left: number; width: number; height: number; cardAtTop: boolean };
 
 export default function StudentWalkthrough() {
-  // Server and first client render agree on "seen" so nothing flashes during hydration.
-  const seen = useSyncExternalStore(subscribe, readSeen, () => true);
   const [manual, setManual] = useState<boolean | null>(null);
   const [step, setStep] = useState(0);
   const [box, setBox] = useState<Box | null>(null);
   const heading = useRef<HTMLHeadingElement>(null);
   const replay = useRef<HTMLButtonElement>(null);
   const card = useRef<HTMLElement>(null);
-  const open = manual ?? !seen;
+  // Optional: the tour opens only when the student asks for it, never over their next step.
+  const open = manual ?? false;
 
   // Only steps whose control is on this student's page, in the order the page shows them.
   const steps = open && typeof document !== "undefined"

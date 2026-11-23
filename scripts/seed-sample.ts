@@ -63,6 +63,12 @@ const PERSONAS: Persona[] = [
   { email: "scholarship@kingsword.test", fullName: "Silas Scholarship", enrollments: [advanced("active", "scholarship")], completed: lessons("st-101", 2) },
   { email: "waiver@kingsword.test", fullName: "Pastor Wale Waiver", enrollments: [advanced("active", "minister-waiver")] },
   { email: "suspended@kingsword.test", fullName: "Sola Suspended", enrollments: [advanced("active", "stripe")], suspend: true },
+  // Believers Training partway through: Modules 1 and 2 assessed, Module 3 next.
+  { email: "bt@kingsword.test", fullName: "Beatrice Believers", enrollments: [believers] },
+  // Bought the earlier six-track Basic Certificates pass.
+  { email: "pass@kingsword.test", fullName: "Paul Pass", enrollments: [{ product: "basic-certificates", plan: "certificate", status: "active", amount: 250, provider: "stripe" }] },
+  // Reserved the Marketplace track and still owes US$250; also joined Grace Academy.
+  { email: "marketplace@kingsword.test", fullName: "Mara Marketplace", enrollments: [{ product: "basic-marketplace", plan: "certificate", status: "pending", amount: 250, provider: null }, { product: "academy-grace", plan: "certificate", status: "active", amount: 50, provider: "stripe" }] },
 ];
 
 function storePath() {
@@ -136,6 +142,14 @@ async function main() {
     const [enrollment] = await db.getEnrollmentsForStudent(silas.student.id);
     const application = await db.createScholarshipApplication({ enrollmentId: enrollment.id, studentId: silas.student.id, financialNeed: "Sample: full-time pastor in a rural church.", trainingGoals: "Sample: teach sound doctrine to the congregation.", amountAbleToPay: 0 });
     if (application) await db.reviewScholarshipApplication({ applicationId: application.id, reviewerId: staff.id, decision: "approved", adminNotes: "Sample data" });
+  }
+
+  // Beatrice has submitted the Module 1 and 2 Believers Training assessments (15 questions each).
+  const bea = people.get("bt@kingsword.test")!;
+  if (bea.created) {
+    for (const [slug, correct] of [["the-new-covenant", 13], ["identity-in-christ", 12]] as const) {
+      await db.createQuizAttempt({ studentId: bea.student.id, courseSlug: "believers-training", lessonId: slug, kind: "topic", correct, total: 15, scorePct: Math.round(correct * 100 / 15), passed: true, answers: [] });
+    }
   }
 
   // Suspension is only ever set by a disputed Stripe payment, so write it directly.

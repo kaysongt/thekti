@@ -41,7 +41,7 @@ export async function beginStripeCheckout(formData: FormData): Promise<void> {
   }
 
   if (!programOffer(enrollment.product) && hasMinisterWaiver(enrollments)) redirect("/dashboard");
-  if (enrollment.product === BASIC_PASS.product || (ownsBasicPass(enrollments) && BASIC_OFFERS.some((offer) => offer.product === enrollment.product))) redirect("/programs#basic-certificates");
+  if (enrollment.product === BASIC_PASS.product || (ownsBasicPass(enrollments) && BASIC_OFFERS.some((offer) => offer.product === enrollment.product))) redirect("/programs/basic-certificates");
   let destination: string;
   try {
     const result = await createCheckoutForEnrollment({

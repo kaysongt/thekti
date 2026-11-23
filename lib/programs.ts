@@ -9,7 +9,7 @@ import sourceCatalogs from "../content/program-catalogs.json";
  * accreditation claims, or statistics that are not in the KTI catalogs.
  */
 
-export type ProgramAvailability = "open" | "intake" | "coming-soon";
+export type ProgramAvailability = "open" | "intake" | "presale" | "coming-soon";
 
 export type ProgramSummary = {
   key: "believers" | "advanced" | "basic" | "specialized";
@@ -28,11 +28,14 @@ export type ProgramSummary = {
   learn: string;
   /** What they can do next. */
   next: string;
+  /** One line that helps a visitor decide whether this program fits them. */
+  fit: string;
 };
 
 export const AVAILABILITY_LABELS: Record<ProgramAvailability, string> = {
   open: "Open now",
   intake: "Enrolls by intake",
+  presale: "Enroll now · classes coming soon",
   "coming-soon": "Coming soon",
 };
 
@@ -49,7 +52,8 @@ export const PROGRAMS: readonly ProgramSummary[] = [
     priceLabel: "Free",
     audience: "New and growing believers, and churches training their members.",
     learn: "Seven essential classes on the new covenant, identity in Christ, the Word, the Holy Spirit, prayer, purpose, and stewardship.",
-    next: "Watch the classes online, then take the printable final assessment with your local church.",
+    next: "Work through seven modules online. Each ends with a 15-question assessment that unlocks the next.",
+    fit: "New and growing believers. Free, and open today.",
   },
   {
     key: "advanced",
@@ -60,38 +64,41 @@ export const PROGRAMS: readonly ProgramSummary[] = [
     imageAlt: "An instructor teaching from an open Bible to a class",
     availability: "intake",
     hoursLabel: "172 program hours",
-    priceLabel: "$250 per certificate · $1,000 full program",
+    priceLabel: "US$250 per certificate · US$1,000 full program",
     audience: "Pastors, ministry leaders, Bible teachers, church workers, small group leaders, missionaries, and new believers.",
     learn: "Five certificates: Systematic Theology, Biblical Foundations, Old Testament Survey, New Testament Survey, and Spiritual Formation.",
     next: "Study one certificate at a time, pass each topic quiz and course assessment at 80%, and complete all five for the Advanced Certificate.",
+    fit: "Pastors, leaders and serious students who want the full theological foundation.",
   },
   {
     key: "basic",
     linkLabel: "Basic Certificates",
     title: "Basic Certificates",
-    href: "/programs#basic-certificates",
+    href: "/programs/basic-certificates",
     image: "/assets/programs/certificates-2026.webp",
     imageAlt: "A small group discussing Scripture together",
-    availability: "coming-soon",
+    availability: "presale",
     hoursLabel: "40–50 program hours",
-    priceLabel: "$250 per certificate",
+    priceLabel: "US$250 per track",
     audience: "Teenagers, ministry leaders, small group leaders, marketplace believers, and Christian creatives.",
     learn: "Six short Biblical Studies tracks, each shaped for the people it serves.",
-    next: "Choose a track and review its sessions and assessment requirements before enrolling.",
+    next: "Choose the one track written for you. US$250 covers that track.",
+    fit: "One short certificate for your season: teens, leaders, the workplace or creatives.",
   },
   {
     key: "specialized",
     linkLabel: "Specialized Academy",
     title: "Specialized Academy",
-    href: "/programs#specialized-academies",
+    href: "/programs/specialized-academies",
     image: "/assets/programs/academies-2026.webp",
     imageAlt: "An open Bible and notebook on a desk",
-    availability: "coming-soon",
+    availability: "presale",
     hoursLabel: "20 program hours",
-    priceLabel: "$50 per academy",
+    priceLabel: "US$50 per academy",
     audience: "Believers who want focused training in one area of Christian life.",
     learn: "Academies in subjects ranging from prayer and faith to marriage, leadership, and church administration.",
-    next: "Choose an academy and review its curriculum. Classes are coming soon.",
+    next: "Choose one academy. US$50 covers that academy.",
+    fit: "One focused subject, such as prayer, marriage or leadership, in 20 program hours.",
   },
 ];
 
@@ -236,7 +243,7 @@ export const BELIEVERS_CLASSES = [
 ] as const;
 
 export const BASIC_OFFERS = BASIC_CERTIFICATES.map((track) => ({
-  product: "basic-" + track.slug, title: "Biblical Studies for " + track.audience, amount: 250,
+  product: "basic-" + track.slug, title: "Certificate in Biblical Studies for " + track.audience, amount: 250,
 }));
 export const BASIC_PASS = { product: "basic-certificates", title: "Basic Certificates · all six tracks", amount: 250 } as const;
 export const ACADEMY_OFFERS = ACADEMIES.map((title) => ({

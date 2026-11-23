@@ -8,7 +8,9 @@ import { db } from "@/lib/db";
 import { currentStudent } from "@/lib/auth";
 import { getModuleStatuses } from "@/lib/content";
 import { formatModuleReleaseDate, getCurriculum } from "@/lib/curriculum";
-import { BASIC_PASS, BASIC_OFFERS, ownsBasicPass, programOffer, basicCatalog, academyCatalog } from "@/lib/programs";
+import { BASIC_PASS, programOffer } from "@/lib/programs";
+import { paidProgramByProduct, paidProgramState, usd } from "@/lib/catalog";
+import { OrderSummary } from "@/components/PaidProgramPanel";
 import { isStripeCheckoutConfigured, paidProgramCheckoutReady } from "@/lib/payments/stripe-client";
 
 import EnrollForm from "./EnrollForm";
@@ -23,21 +25,34 @@ export default async function EnrollPage({
   const student = await currentStudent();
   const { program: selected, plan, scholarship } = await searchParams;
   const offer = programOffer(selected);
-  if (selected === BASIC_PASS.product) redirect("/programs#basic-certificates");
-  if (offer) {
+  if (selected === BASIC_PASS.product) redirect("/programs/basic-certificates");
+  const paid = offer ? paidProgramByProduct(offer.product) : undefined;
+  if (paid) {
     const records = student ? await db.getEnrollmentsForStudent(student.id) : [];
-    const basic = BASIC_OFFERS.some((item) => item.product === offer.product);
-    if (basic && ownsBasicPass(records)) redirect("/dashboard#program-" + BASIC_PASS.product);
-    const detail = basic ? basicCatalog(offer.product.slice(6)) : academyCatalog(offer.title);
-    if (records.some((entry) => entry.product === offer.product && (entry.status === "active" || entry.status === "pending"))) redirect("/dashboard#program-" + offer.product);
-    return <main className="shell"><section className="authwrap"><div className="authcard">
-      <h1>{offer.title}</h1><p>One payment of US${offer.amount} covers {basic ? "this Basic Certificate track" : "this academy"}. Classes are coming soon. Your purchase gives you access as they open.</p>
-      {detail && <p><Link href={"https://drive.google.com/file/d/" + detail.catalog + "/view"}>Read the course catalog</Link>{offer.product === "basic-teenagers" && " · Current tuition is US$250. The PDF lists an earlier fee."}</p>}
-      {paidProgramCheckoutReady(offer.product) ? <EnrollForm offerProduct={offer.product} signedIn={Boolean(student)} initialPlan="certificate" modules={[]} scholarshipIntent={false} returnPath={"/enroll?program=" + offer.product} /> : <p>Payment enrollment is coming soon.</p>}
-    </div></section></main>;
+    const state = paidProgramState(paid, records);
+    if (state === "enrolled" || state === "payment-due" || state === "on-hold") redirect(`/dashboard?program=${paid.product}`);
+    const returnPath = `/enroll?program=${paid.product}`;
+    return <main className="shell" id="main-content" tabIndex={-1}><div className="authwrap"><div className="authcard">
+      {state === "covered-by-pass" ? <>
+        <h1>This track is already yours</h1>
+        <p className="sub">Your Basic Certificates pass covers all six tracks, including the {paid.name}. There is nothing to buy.</p>
+        <Link className="btn primary lg block" href="/dashboard?program=basic-certificates">Open My studies</Link>
+      </> : <>
+        <h1>{student ? "Confirm your enrollment" : "Create your account"}</h1>
+        <OrderSummary program={paid} />
+        {paid.kind === "basic" && paid.pdfFeeNote ? <p className="hint">{paid.pdfFeeNote}</p> : null}
+        {paidProgramCheckoutReady(paid.product) ? <>
+          <p className="sub">{student
+            ? `You are signed in as ${student.email}. Confirm to reserve your place, then pay ${usd(paid.price)} securely by card.`
+            : `Create your KTI account to reserve your place. You pay ${usd(paid.price)} on the next step, by card.`}</p>
+          <EnrollForm offerProduct={paid.product} offerLabel={`${usd(paid.price)}`} signedIn={Boolean(student)} initialPlan="certificate" modules={[]} scholarshipIntent={false} returnPath={returnPath} />
+        </> : <p className="notice">Online enrollment for this program opens soon. Email <a href="mailto:kti@kingsword.org">kti@kingsword.org</a> to be told when it does.</p>}
+        <p className="formfoot"><Link href={paid.href}>Back to {paid.kind === "basic" ? "this track" : "this academy"}</Link></p>
+      </>}
+    </div></div></main>;
   }
   if (selected === BELIEVERS) {
-    if (student && belongsToBelievers(await db.getEnrollmentsForStudent(student.id))) redirect("/programs/believers-training#classes");
+    if (student && belongsToBelievers(await db.getEnrollmentsForStudent(student.id))) redirect("/dashboard?program=believers");
     return <main className="shell" id="main-content" tabIndex={-1}><div className="authwrap"><div className="authcard">
       <h1>{student ? "Join Believers Training" : "Create your account"}</h1>
       <p className="sub">

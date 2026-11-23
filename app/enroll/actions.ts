@@ -133,7 +133,7 @@ export async function registerStudent(
   }
 
   if (!session) await startSession(studentId);
-  if (offer) redirect("/dashboard#program-" + offer.product);
-  if (free) redirect("/programs/believers-training#classes");
+  if (offer) redirect("/dashboard?program=" + offer.product);
+  if (free) redirect("/dashboard?program=believers");
   redirect(scholarshipIntent === "apply" ? "/scholarship" : "/dashboard");
 }

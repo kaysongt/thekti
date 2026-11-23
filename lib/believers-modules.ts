@@ -20,7 +20,8 @@ export async function getStudyAccess(slug: string, lessonSlug?: string) {
   const results = await db.getBelieversResults(student.id);
   const scores = new Map(results.map((row) => [row.lessonId, row.correct]));
   const prerequisite = modules.find((entry) => entry.number < module.number && !scores.has(entry.slug));
-  if (prerequisite) redirect(believersPath + "/" + prerequisite.slug + "/assessment");
+  // Modules open in order. Explain the lock instead of silently moving the student.
+  if (prerequisite) redirect(`${believersPath}/locked?module=${module.slug}`);
   return { module, student, score: scores.get(module.slug) };
 }
 

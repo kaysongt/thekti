@@ -2,7 +2,6 @@ import Image from "next/image";
 import Link from "next/link";
 
 import Icon from "@/components/Icon";
-import ProgramCatalog from "@/components/ProgramCatalog";
 import { getCurriculum } from "@/lib/curriculum";
 import { AVAILABILITY_LABELS, PROGRAMS } from "@/lib/programs";
 
@@ -22,16 +21,16 @@ export default function HomePage() {
             {PROGRAMS.map((item) => (
               <Link className="program-link" href={item.href} key={item.key}>
                 <span className="program-link-title">{item.linkLabel}</span>
+                <span className="program-link-fit">{item.fit}</span>
                 <span className="program-link-meta">
-                  {item.availability === "open" ? item.priceLabel : AVAILABILITY_LABELS[item.availability]}
-                  {" · "}{item.hoursLabel}
+                  {item.priceLabel} · {item.availability === "open" ? item.hoursLabel : AVAILABILITY_LABELS[item.availability]}
                 </span>
                 <Icon name="chevron-right" className="program-link-go" />
               </Link>
             ))}
           </nav>
           <p className="home-return">
-            Already a student? <Link href="/login?next=/dashboard">Sign in to continue studying</Link>
+            <Link href="/programs">Compare all programs</Link> · Already a student? <Link href="/login?next=/dashboard">Sign in to continue studying</Link>
           </p>
           </div>
           <Image
@@ -42,19 +41,6 @@ export default function HomePage() {
             height={1024}
             sizes="440px"
           />
-        </div>
-      </section>
-
-      <section className="section" aria-labelledby="programs-heading">
-        <div className="wrap">
-          <div className="section-head">
-            <div>
-              <h2 id="programs-heading">Find the right program</h2>
-              <p>Each program lists who it serves, what you will study, and the step that follows. Believers Training is free and open now.</p>
-            </div>
-            <Link className="text-link" href="/programs">Full program catalog <Icon name="arrow-right" /></Link>
-          </div>
-          <ProgramCatalog />
         </div>
       </section>
 

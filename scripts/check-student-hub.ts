@@ -8,7 +8,7 @@ import path from "node:path";
 
 import { getCurriculum } from "../lib/curriculum";
 import type { AssessmentSubmission, Enrollment } from "../lib/db/types";
-import { ACADEMIES, ACADEMY_HOURS, BASIC_CERTIFICATES, PROGRAMS } from "../lib/programs";
+import { BASIC_OFFERS, ACADEMY_OFFERS, basicCatalog, ACADEMIES, ACADEMY_HOURS, BASIC_CERTIFICATES, PROGRAMS } from "../lib/programs";
 import { buildStudentHub, type AdvancedHub } from "../lib/student-hub";
 
 const { modules } = getCurriculum();
@@ -181,7 +181,14 @@ assert.deepEqual(hub({}), []);
     assert.equal(track.modules.reduce((sum, m) => sum + m.hours, 0), track.hours, `${track.slug} module hours add up`);
   }
   assert.equal(BASIC_CERTIFICATES[0].ages, "Ages 13–18");
-  assert.equal(ACADEMIES.length, 16);
+  assert.equal(ACADEMIES.length, 24);
+  assert.equal(BASIC_OFFERS.length, 6);
+  for (const track of BASIC_CERTIFICATES) {
+    const courses = basicCatalog(track.slug).courses;
+    assert.equal(new Set(courses.map((c) => c.code)).size, track.hours / 2);
+    assert.equal(BASIC_OFFERS.find((offer) => offer.product === "basic-" + track.slug)?.amount, 250);
+  }
+  assert.ok(ACADEMY_OFFERS.every((offer) => offer.amount === 50));
   assert.equal(ACADEMY_HOURS, 20);
   for (const program of PROGRAMS) assert.ok(program.hoursLabel.endsWith("program hours"));
   const pages = ["app/page.tsx", "app/programs/page.tsx", "app/programs/advanced-certificate/page.tsx", "lib/programs.ts"].map((file) => fs.readFileSync(path.join(process.cwd(), file), "utf8"));

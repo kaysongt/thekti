@@ -124,11 +124,11 @@ export default async function DashboardPage({
   const enrolledInBelievers = belongsToBelievers(allEnrollments);
   const enrollments = currentAdvancedEnrollments(allEnrollments);
   const showAdvanced = enrollments.length > 0 || staffPreview;
-  const [progress, engagement, scholarshipApplications] = showAdvanced ? await Promise.all([
-    db.getProgress(student.id),
-    db.getCommunityEngagement(student.id),
-    db.getScholarshipApplicationsForStudent(student.id),
-  ]) : [[], { posts: 0, credits: 0 }, []] as const;
+  const [progress, engagement, scholarshipApplications] = await Promise.all([
+    showAdvanced ? db.getProgress(student.id) : [],
+    showAdvanced ? db.getCommunityEngagement(student.id) : { posts: 0, credits: 0 },
+    showAdvanced ? db.getScholarshipApplicationsForStudent(student.id) : [],
+  ]);
   const statuses = getModuleStatuses().filter(({ module }) => staffPreview ||
     enrollments.some((e) => e.product === "advanced" || e.product === module.slug) ||
     hasStudyAccess(student, enrollments, module.slug));

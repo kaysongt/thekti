@@ -1,81 +1,109 @@
+import Image from "next/image";
+import Link from "next/link";
+
+import Icon from "@/components/Icon";
+import LiteVideo from "@/components/LiteVideo";
+import { ProgramStatus } from "@/components/ProgramCatalog";
 import { currentStudent } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { belongsToBelievers } from "@/lib/program-membership";
-import Image from "next/image";
-import styles from "@/components/ProgramImages.module.css";
-import Link from "next/link";
+import { BELIEVERS_CLASSES, getProgram } from "@/lib/programs";
 
 export const metadata = {
   title: "Believers Training",
-  description: "Study seven free video modules or download the printable final assessment for your local church.",
+  description: "Study seven free video classes or download the printable final assessment for your local church.",
 };
 
-const classes = [
-  { title: "The New Covenant", videoId: "0IWX-fwHmu0" },
-  { title: "Identity in Christ", videoId: "rebnFvX6r_8" },
-  { title: "The Word: The Agent of Change", videoId: "4CzCbnx0eEU" },
-  { title: "The Ministry of the Holy Spirit", videoId: "2EEpawrfzMM" },
-  { title: "Spiritual Authority and Prayer", videoId: "-zxEVgYMbeU" },
-  { title: "Purpose and Calling", videoId: "zRPiNwnmVbs" },
-  { title: "Stewardship and Missional Lifestyle", videoId: "RLbRya09Mn8" },
-];
+const JOIN_PATH = "/enroll?program=believers-training";
 
 export default async function BelieversTrainingPage() {
+  const program = getProgram("believers");
   const student = await currentStudent();
-  const enrolled = student && belongsToBelievers(await db.getEnrollmentsForStudent(student.id));
+  const enrolled = Boolean(student && belongsToBelievers(await db.getEnrollmentsForStudent(student.id)));
+
   return (
-    <main className="shell" id="main-content" tabIndex={-1}>
-      <header className={styles.feature}>
-        <div>
-          <Link href="/programs">All programs</Link>
-          <h1>Believers Training</h1>
-          <p className={styles.meta}>7 essential classes · 21 program hours</p>
-          <p className="deck">Build a foundation for following Jesus in seven free video modules. Learn at your own pace or with your local church.</p>
-        </div>
-        <Image src="/assets/programs/believers.webp" alt="" width={834} height={469} sizes="(max-width: 700px) 100vw, 540px" />
-      </header>
-      {enrolled ? <><div className="cards program-cards">
-        <section className="card">
-          <h2 className="t">Study online</h2>
-          <p>Watch all seven video classes for free on KTI.</p>
-          <div className="foot">
-            <a className="btn primary" href="#classes">Watch the classes</a>
+    <main id="main-content" tabIndex={-1}>
+      <header className="band page-band program-hero">
+        <div className="wrap program-hero-grid">
+          <div>
+            <Link className="crumb" href="/programs">All programs</Link>
+            <h1>Believers Training</h1>
+            <div className="program-hero-meta">
+              <ProgramStatus program={program} />
+              <span>{program.priceLabel} · {BELIEVERS_CLASSES.length} essential classes · {program.hoursLabel}</span>
+            </div>
+            <dl className="program-facts on-navy">
+              <div><dt>Who it serves</dt><dd>{program.audience}</dd></div>
+              <div><dt>What you will learn</dt><dd>{program.learn}</dd></div>
+              <div><dt>What comes next</dt><dd>{program.next}</dd></div>
+            </dl>
+            <div className="action-row program-actions">
+              {enrolled ? (
+                <>
+                  <a className="btn gold lg" href="#classes">Open classes <Icon name="arrow-right" className="arrow" /></a>
+                  <Link className="btn ghost lg" href="/programs/believers-training/assessment">Get the printable assessment</Link>
+                </>
+              ) : student ? (
+                <Link className="btn gold lg" href={JOIN_PATH}>Join this program — free <Icon name="arrow-right" className="arrow" /></Link>
+              ) : (
+                <>
+                  <Link className="btn gold lg" href={JOIN_PATH}>Create an account to join</Link>
+                  <Link className="btn ghost lg" href={`/login?next=${encodeURIComponent(JOIN_PATH)}`}>Sign in to join</Link>
+                </>
+              )}
+            </div>
+            {enrolled ? <p className="program-hero-note">You are enrolled. Your classes are below.</p> : null}
           </div>
+          <Image
+            className="program-hero-photo"
+            src={program.image}
+            alt={program.imageAlt}
+            width={834}
+            height={469}
+            sizes="(max-width: 900px) 0px, 460px"
+          />
+        </div>
+      </header>
+
+      <div className="wrap section">
+        <section id="classes" aria-labelledby="classes-title" className="class-path-section">
+          <div className="section-head">
+            <div>
+              <h2 id="classes-title">The seven-class path</h2>
+              <p>
+                {enrolled
+                  ? "Watch the classes in order. KTI does not track individual class progress yet, so pick up wherever you left off."
+                  : "Join the program to watch every class. The titles below show the full path."}
+              </p>
+            </div>
+          </div>
+          <ol className="class-path">
+            {BELIEVERS_CLASSES.map(({ title, videoId }, index) => (
+              <li key={videoId} id={`class-${index + 1}`}>
+                <div className="class-path-head">
+                  <span className="class-number">Class {index + 1}</span>
+                  <h3>{title}</h3>
+                </div>
+                {enrolled ? <LiteVideo videoId={videoId} title={`Class ${index + 1}: ${title}`} /> : null}
+              </li>
+            ))}
+          </ol>
         </section>
-        <section className="card">
-          <h2 className="t">Give the assessment at your church</h2>
-          <p>Enter your church’s name and location to download the printable 50-question final assessment.</p>
-          <div className="foot">
-            <Link className="btn primary" href="/programs/believers-training/assessment">Get the printable assessment</Link>
+
+        <section className="k-card assessment-callout" aria-labelledby="assessment-title">
+          <div className="k-card-body">
+            <h2 id="assessment-title">Final assessment with your church</h2>
+            <p>The 50-question final assessment is printable. Enter your church’s name and location, download it, and give it at your local church.</p>
+            <div className="action-row">
+              {enrolled ? (
+                <Link className="btn primary" href="/programs/believers-training/assessment"><Icon name="download" /> Get the printable assessment</Link>
+              ) : (
+                <p className="hint">Available after you join Believers Training.</p>
+              )}
+            </div>
           </div>
         </section>
       </div>
-      <section id="classes" aria-labelledby="classes-title">
-        <h2 id="classes-title">Believers Training classes</h2>
-        <p>Saved progress and the online final assessment are coming to KTI later.</p>
-        {classes.map(({ title, videoId }, index) => (
-          <section key={videoId} aria-labelledby={`bt-class-${index + 1}`}>
-            <h3 id={`bt-class-${index + 1}`}>Class {index + 1} · {title}</h3>
-            <div className="videoslot">
-              <div className="frame">
-                <iframe
-                  src={`https://www.youtube-nocookie.com/embed/${videoId}`}
-                  title={title}
-                  loading="lazy"
-                  allow="encrypted-media; picture-in-picture"
-                  allowFullScreen
-                />
-              </div>
-            </div>
-          </section>
-        ))}
-      </section>
-      </> : <section className="panel">
-        <h2>Start your training</h2>
-        <p>Join this free program to watch the classes and access the final assessment.</p>
-        <Link className="btn primary" href="/enroll?program=believers-training">Join Believers Training</Link>
-        {!student && <p>Already enrolled? <Link href="/login?next=/programs/believers-training">Sign in</Link></p>}
-      </section>}
     </main>
   );
 }

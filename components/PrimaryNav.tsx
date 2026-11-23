@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
 import { isPrimaryRouteActive, PRIMARY_NAV_ITEMS } from "@/lib/navigation";
+import ThemeToggle from "./ThemeToggle";
 
 export default function PrimaryNav() {
   const pathname = usePathname();
@@ -57,7 +58,9 @@ export default function PrimaryNav() {
           onClick={() => setOpen((current) => !current)}
         >
           Menu
-          <span aria-hidden="true">{open ? "-" : "+"}</span>
+          <svg className="icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" aria-hidden="true">
+            {open ? <path d="M6 6l12 12M18 6L6 18" /> : <path d="M4 7h16M4 12h16M4 17h16" />}
+          </svg>
         </button>
         <div className="mobile-primary-panel" id="mobile-primary-menu" hidden={!open}>
           {PRIMARY_NAV_ITEMS.map((item) => {
@@ -74,6 +77,7 @@ export default function PrimaryNav() {
               </Link>
             );
           })}
+          <div className="mobile-panel-theme"><ThemeToggle /></div>
         </div>
       </div>
     </>

@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { formatRegistrationDeadline, getRegistrationDeadline, isRegistrationOpen } from "@/lib/registration";
 
-import { BELIEVERS, belongsToBelievers } from "@/lib/program-membership";
+import { BELIEVERS, belongsToBelievers, currentAdvancedEnrollments } from "@/lib/program-membership";
 import { db } from "@/lib/db";
 import { currentStudent } from "@/lib/auth";
 import { getModuleStatuses } from "@/lib/content";
@@ -23,9 +23,23 @@ export default async function EnrollPage({
   const { program: selected, plan, scholarship } = await searchParams;
   if (selected === BELIEVERS) {
     if (student && belongsToBelievers(await db.getEnrollmentsForStudent(student.id))) redirect("/programs/believers-training#classes");
-    return <main className="shell" id="main-content"><div className="authwrap"><div className="authcard">
-      <h1>Join Believers Training</h1><p>Seven free classes and a printable final assessment.</p>
-      <EnrollForm free signedIn={Boolean(student)} initialPlan="advanced" modules={[]} scholarshipIntent={false} />
+    return <main className="shell" id="main-content" tabIndex={-1}><div className="authwrap"><div className="authcard">
+      <h1>{student ? "Join Believers Training" : "Create your account"}</h1>
+      <p className="sub">
+        {student
+          ? `You are signed in as ${student.email}. Join to open the seven free classes and the printable final assessment.`
+          : "Believers Training is free. Create a KTI account to open the seven classes and the printable final assessment."}
+      </p>
+      <EnrollForm free signedIn={Boolean(student)} initialPlan="advanced" modules={[]} scholarshipIntent={false} returnPath="/enroll?program=believers-training" />
+    </div></div></main>;
+  }
+  const existing = student ? currentAdvancedEnrollments(await db.getEnrollmentsForStudent(student.id)) : [];
+  if (existing.length) {
+    return <main className="shell" id="main-content" tabIndex={-1}><div className="authwrap"><div className="authcard">
+      <h1>You are already enrolled</h1>
+      <p className="sub">Your Advanced Certificate enrollment is on file, so there is nothing to submit again. My studies shows your next lesson{existing.some((e) => e.status === "pending") ? " and your payment options" : ""}.</p>
+      <Link className="btn primary lg block" href="/dashboard#program-advanced">Go to My studies</Link>
+      <p className="formfoot">Want to add Believers Training? <Link href="/enroll?program=believers-training">Join it free</Link>.</p>
     </div></div></main>;
   }
   const deadline = await getRegistrationDeadline();
@@ -60,11 +74,12 @@ export default async function EnrollPage({
     <main className="shell" id="main-content" tabIndex={-1}>
       <div className="authwrap">
         <div className="authcard">
-          <h1>Enroll</h1>
+          <h1>{student ? "Join the Advanced Certificate" : "Create your account"}</h1>
           <div className="notice good"><strong>Registration is open.</strong> Sign up before {deadlineLabel}.</div>
           <p className="sub">
-            Enroll in the {program.title}. Choose a single certificate or reserve
-            your place in the full program.
+            {student
+              ? `You are signed in as ${student.email}. Choose a single certificate or the full ${program.title}.`
+              : `Enroll in the ${program.title}. Choose a single certificate or reserve your place in the full program.`}
           </p>
 
           {scholarshipIntent ? (
@@ -95,6 +110,7 @@ export default async function EnrollPage({
             initialPlan={initialPlan}
             modules={modules}
             scholarshipIntent={scholarshipIntent}
+            returnPath={`/enroll${plan === "certificate" ? "?plan=certificate" : ""}`}
           />
         </div>
       </div>

@@ -141,7 +141,6 @@ export default function TopicReader({
           student progress.
         </div>
       ) : null}
-      {!preview ? <p className="notice">Read this lesson and score at least {passMark}% on its quiz. Then select “Mark complete” below to unlock the next lesson. You can retry if you score below {passMark}%. Complete every lesson to unlock the course assessment.</p> : null}
       <LessonBody html={sections.teaching} passMark={passMark} />
       {preview ? <LessonBody html={sections.quiz} passMark={passMark} /> : <section className="timed-quiz" aria-label="Timed lesson assessment">
         <h2>Lesson assessment</h2>
@@ -164,7 +163,7 @@ export default function TopicReader({
       ) : null}
 
       {!preview ? (
-        <div className={`done-strip${complete ? " is-done" : ""}`}>
+        <div className={`done-strip${complete ? " is-done" : ""}`} id="mark-complete">
           <button
             type="button"
             className={complete ? "btn" : "btn primary"}

@@ -1,9 +1,13 @@
 import Link from "next/link";
-import styles from "@/components/ProgramImages.module.css";
 import Image from "next/image";
 import { formatRegistrationDeadline, getRegistrationDeadline, isRegistrationOpen } from "@/lib/registration";
 
 import { getModuleStatuses } from "@/lib/content";
+import Icon from "@/components/Icon";
+import { currentStudent } from "@/lib/auth";
+import { db } from "@/lib/db";
+import { currentAdvancedEnrollments } from "@/lib/program-membership";
+import { getProgram } from "@/lib/programs";
 import {
   PRICING,
   getCurriculum,
@@ -83,9 +87,12 @@ const FACULTY_ROSTER: readonly FacultyRosterMember[] = [
 
 export default async function AdvancedCertificatePage() {
   const registrationDeadline = await getRegistrationDeadline();
+  const registrationOpen = isRegistrationOpen(new Date(), registrationDeadline);
+  const summary = getProgram("advanced");
+  const student = await currentStudent();
+  const enrolled = Boolean(student && currentAdvancedEnrollments(await db.getEnrollmentsForStudent(student.id)).length);
   const { program, grading } = getCurriculum();
   const moduleStatuses = getModuleStatuses();
-  const firstModule = moduleStatuses[0];
   const fullProgramSavings =
     PRICING.certificate.amount * program.total_certificates - PRICING.advanced.amount;
   const fullProgramSavingsLabel = new Intl.NumberFormat("en-US", {
@@ -96,75 +103,57 @@ export default async function AdvancedCertificatePage() {
 
   return (
     <main className="marketing-home" id="main-content" tabIndex={-1}>
-      {isRegistrationOpen(new Date(), registrationDeadline) ? <div className="shell"><p className="notice good"><strong>Registration is open.</strong> Sign up before {formatRegistrationDeadline(registrationDeadline)}. <Link href="/enroll">Register now →</Link></p></div> : null}
-      <section className="hero home-hero">
-        <div className="hero-glow" aria-hidden="true" />
-        <div className="wide hero-grid">
-          <div className="hero-copy">
-            <h1>
-              Know God&rsquo;s Word <em>for yourself.</em>
-            </h1>
-            <p className="hero-lede">
-              A Bible-centered program for believers who want a sure foundation in Scripture,
-              sound doctrine, and practical Christian living.
-            </p>
-            <div className="hero-actions">
-              <Link href="/enroll" className="btn lg gold hero-action" aria-label="Start your training">
-                Start
-              </Link>
-              <Link
-                href="/curriculum"
-                className="btn lg ghost hero-action"
-                aria-label="Explore the curriculum"
-              >
-                Explore
-              </Link>
+      <header className="band page-band program-hero">
+        <div className="wrap program-hero-grid">
+          <div>
+            <Link className="crumb" href="/programs">All programs</Link>
+            <h1>Advanced Certificate in Biblical Studies</h1>
+            <div className="program-hero-meta">
+              <span className={`badge ${registrationOpen ? "open" : "intake"}`}>{registrationOpen ? "Registration open" : "Registration closed"}</span>
+              <span>{program.total_hours} program hours · {program.total_certificates} certificates · {program.total_courses} courses</span>
             </div>
-
-            <dl className="hero-stats">
-              <div>
-                <dt>{program.total_hours}</dt>
-                <dd>contact hours</dd>
-              </div>
-              <div>
-                <dt>{program.total_certificates}</dt>
-                <dd>certificates</dd>
-              </div>
-              <div>
-                <dt>{program.total_courses}</dt>
-                <dd>courses</dd>
-              </div>
+            <dl className="program-facts on-navy">
+              <div><dt>Who it serves</dt><dd>{summary.audience}</dd></div>
+              <div><dt>What you will learn</dt><dd>{summary.learn}</dd></div>
+              <div><dt>What comes next</dt><dd>{summary.next}</dd></div>
             </dl>
+            <div className="action-row program-actions">
+              {enrolled ? (
+                <Link className="btn gold lg" href="/dashboard#program-advanced">Continue studying <Icon name="arrow-right" className="arrow" /></Link>
+              ) : registrationOpen ? (
+                student ? (
+                  <Link className="btn gold lg" href="/enroll">Join this program <Icon name="arrow-right" className="arrow" /></Link>
+                ) : (
+                  <>
+                    <Link className="btn gold lg" href="/enroll">Create an account to enroll</Link>
+                    <Link className="btn ghost lg" href={`/login?next=${encodeURIComponent("/enroll")}`}>Sign in to enroll</Link>
+                  </>
+                )
+              ) : (
+                <>
+                  <Link className="btn gold lg" href="/curriculum">Explore the curriculum</Link>
+                  {student ? null : <Link className="btn ghost lg" href="/login?next=/dashboard">Current students: sign in</Link>}
+                </>
+              )}
+            </div>
+            <p className="program-hero-note">
+              {enrolled
+                ? "You are enrolled. My studies shows your next lesson, payments, and results."
+                : registrationOpen
+                  ? `Registration closes ${formatRegistrationDeadline(registrationDeadline)}. ${PRICING.certificate.label} per certificate or ${PRICING.advanced.label} for the full program.`
+                  : `The current registration window has closed. Enrolled students keep their access. For the next intake, email ${program.contact.email}.`}
+            </p>
           </div>
-
-          <aside className="hero-panel" aria-label="Program overview">
-            <div className="hero-panel-top">
-              <span className={styles.heroPanelBrand}><Image src="/assets/kti-brand-2026.png" alt="" width={42} height={28} /> Advanced Certificate</span>
-              <span>Now enrolling</span>
-            </div>
-            <Image className="hero-mark" src="/assets/programs/advanced.webp" alt="" width={834} height={469} sizes="(max-width: 760px) 90vw, 450px" />
-            <div className="hero-panel-intro">
-              <span className="hero-panel-label">Your starting point</span>
-              <div>
-                <strong>Module I</strong>
-                <span>Systematic Theology</span>
-              </div>
-              <span className="hero-open">
-                {firstModule.available ? "Available now" : moduleReleaseLabel(firstModule.module)}
-              </span>
-            </div>
-            <ol className="hero-route">
-              {moduleStatuses.slice(0, 3).map(({ module, available }, index) => (
-                <li key={module.slug} className={available ? "ready" : "upcoming"}>
-                  <span>{String(index + 1).padStart(2, "0")}</span>
-                  <strong>{module.short_title}</strong>
-                  <em>{available ? "Open" : moduleReleaseLabel(module)}</em>
-                </li>
-              ))}
-            </ol>
-          </aside>
+          <Image
+            className="program-hero-photo program-hero-seal"
+            src="/assets/kti-brand-2026.png"
+            alt="KingsWord Training Institute seal: Advanced Certificate in Biblical Studies"
+            width={1536}
+            height={1024}
+            sizes="460px"
+          />
         </div>
-      </section>
+      </header>
 
       {program.intro_video?.url ? (
         <section className="section home-section intro-video-section" aria-labelledby="intro-video-heading">
@@ -190,8 +179,8 @@ export default async function AdvancedCertificatePage() {
             {/*
               * Self-hosted rather than embedded: the file is small enough to
               * ship with the site, which keeps a third party's branding and
-              * traffic limits off the homepage. preload="metadata" fetches the
-              * poster and duration without pulling the whole clip.
+              * traffic limits off the page. preload="none" with a poster loads
+              * nothing but the still until the visitor presses play.
               */}
             <div className="intro-video-frame">
               <video
@@ -199,7 +188,7 @@ export default async function AdvancedCertificatePage() {
                 poster={program.intro_video.poster ?? undefined}
                 controls
                 playsInline
-                preload="metadata"
+                preload="none"
                 aria-label={program.intro_video.title ?? `Welcome to ${program.institute}`}
               />
             </div>
@@ -470,7 +459,7 @@ export default async function AdvancedCertificatePage() {
             <details>
               <summary>How long does it take?</summary>
               <div className="ans">
-                The full program is {program.total_hours} contact hours across {program.total_courses}
+                The full program is {program.total_hours} program hours across {program.total_courses}
                 {" "}courses. It is self-paced within a defined time limit, so you can set
                 a steady schedule while working toward a clear finish. Each certificate can be
                 taken on its own.

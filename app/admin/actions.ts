@@ -87,12 +87,24 @@ const gradeSchema = z.object({
 });
 
 export async function gradeAssessment(formData: FormData): Promise<void> {
-  const grader = await staffMember();
-  const input = gradeSchema.parse({
+  const grader = await staffMember("/admin/grading");
+  const parsed = gradeSchema.safeParse({
     submissionId: formData.get("submissionId"),
     writtenPoints: formData.get("writtenPoints"),
     feedback: formData.get("feedback"),
   });
+  const id = String(formData.get("submissionId") ?? "");
+  if (!parsed.success) {
+    redirect(`/admin/grading?id=${encodeURIComponent(id)}&error=invalid`);
+  }
+  const input = parsed.data;
+  // Only papers still waiting for review are graded here, so a second click or
+  // a stale tab cannot overwrite a grade another instructor already recorded.
+  const submission = await db.getAssessmentSubmissionForGrading(input.submissionId);
+  if (!submission) redirect("/admin/grading?error=missing");
+  if (submission.status !== "pending-review") {
+    redirect(`/admin/grading?graded=${input.submissionId}&error=already-graded`);
+  }
   await db.gradeAssessment({
     id: input.submissionId,
     graderId: grader.id,
@@ -100,6 +112,9 @@ export async function gradeAssessment(formData: FormData): Promise<void> {
     feedback: input.feedback,
   });
   revalidatePath("/admin");
+  revalidatePath("/admin/grading");
+  revalidatePath("/dashboard");
+  redirect(`/admin/grading?graded=${input.submissionId}`);
 }
 
 const moderationSchema = z.object({

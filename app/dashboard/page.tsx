@@ -1,35 +1,34 @@
-import { belongsToBelievers, currentAdvancedEnrollments } from "@/lib/program-membership";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { signOut } from "@/app/login/actions";
-import { changeOwnPassword } from "./actions";
-import StripeCheckoutButton from "@/components/StripeCheckoutButton";
-import { getModuleEnrollmentState, hasMinisterWaiver, hasStudyAccess } from "@/lib/access";
-import LaunchAccessNotice from "@/components/LaunchAccessNotice";
-import StudentWalkthrough from "@/components/StudentWalkthrough";
-import StudentModuleProgress from "@/components/StudentModuleProgress";
-import ModuleOneUpdate from "@/components/ModuleOneUpdate";
-import { currentStudent, isStaff } from "@/lib/auth";
-import { isCoursePreview } from "@/lib/learning-mode";
+import DeferredDetails from "@/components/DeferredDetails";
+import Icon from "@/components/Icon";
 import LearningModeBanner from "@/components/LearningModeBanner";
-import { getModuleStatuses } from "@/lib/content";
+import ModuleOneUpdate, { ModuleOneDeadline } from "@/components/ModuleOneUpdate";
+import PaymentPanel from "@/components/PaymentPanel";
+import StudentWalkthrough from "@/components/StudentWalkthrough";
+import { hasMinisterWaiver } from "@/lib/access";
+import { currentStudent, isStaff } from "@/lib/auth";
+import { getCourseStatuses, getLessonRows, getModuleStatuses } from "@/lib/content";
+import { getCurriculum } from "@/lib/curriculum";
 import { db } from "@/lib/db";
+import { isCoursePreview } from "@/lib/learning-mode";
+import { BELIEVERS_CLASSES } from "@/lib/programs";
+import { currentAdvancedEnrollments } from "@/lib/program-membership";
 import {
-  formatModuleReleaseDate,
-  getCurriculum,
-  moduleReleaseLabel,
-} from "@/lib/curriculum";
-import { promotionCodesAllowed } from "@/lib/payments/promotions";
-import { isStripeCheckoutConfigured } from "@/lib/payments/stripe-client";
-import {
-  listLatestStripePaymentAttempts,
-  type StripePaymentAttemptSummary,
-} from "@/lib/payments/stripe-store";
-import { getPaymentReminderTiming } from "@/lib/reminders/payment-reminder-policy";
+  buildStudentHub,
+  CHOOSE_PROGRAM_ACTION,
+  MODULE_STATE_LABELS,
+  moduleStateExplanation,
+  type AdvancedHub,
+  type HubAction,
+  type HubModule,
+  type ModuleState,
+} from "@/lib/student-hub";
 
-import { beginStripeCheckout } from "./actions";
+import { changeOwnPassword } from "./actions";
 
 export const metadata: Metadata = {
   title: "My studies",
@@ -85,24 +84,125 @@ const accessMessages: Record<string, { tone: "good" | "warn" | "bad"; text: stri
   },
 };
 
-const paymentStatusLabels: Record<StripePaymentAttemptSummary["status"], string> = {
-  created: "Starting checkout",
-  open: "Checkout ready",
-  processing: "Payment processing",
-  paid: "Paid",
-  failed: "Payment failed",
-  expired: "Checkout expired",
-  "partially-refunded": "Partially refunded",
-  refunded: "Refunded",
-  disputed: "Payment under review",
+const ACTION_BUTTON: Record<HubAction["kind"], string> = {
+  "start-lesson": "Start lesson",
+  "resume-lesson": "Open lesson",
+  assessment: "Open assessment",
+  payment: "See payment options",
+  release: "Preview the module",
+  "awaiting-grading": "See submitted work",
+  contact: "Email KTI",
+  review: "Open the curriculum",
+  "open-classes": "Open classes",
+  "choose-program": "Browse programs",
 };
 
-function tuition(amount: number, currency: string): string {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency,
-    maximumFractionDigits: 0,
-  }).format(amount);
+const BADGE_FOR_STATE: Record<ModuleState, string> = {
+  completed: "done",
+  available: "open",
+  "awaiting-payment": "payment",
+  scheduled: "scheduled",
+  "in-preparation": "soon",
+  "on-hold": "hold",
+  "not-included": "soon",
+};
+
+function NextStep({ action, tour }: { action: HubAction; tour?: boolean }) {
+  const external = action.href.startsWith("mailto:");
+  const button = (
+    <>
+      {ACTION_BUTTON[action.kind]} <Icon name="arrow-right" className="arrow" />
+    </>
+  );
+  return (
+    <div className="next-step" data-tour={tour ? "next-step" : undefined}>
+      <div className="next-step-copy">
+        {action.context ? <p className="next-step-context">{action.context}</p> : null}
+        <h3>{action.label}</h3>
+        <p>{action.detail}</p>
+      </div>
+      {external || action.href.startsWith("#") ? (
+        <a className="btn gold lg" href={action.href}>{button}</a>
+      ) : (
+        <Link className="btn gold lg" href={action.href}>{button}</Link>
+      )}
+    </div>
+  );
+}
+
+function ModuleRow({ hub }: { hub: HubModule }) {
+  const { module, state } = hub;
+  const percent = hub.topics ? Math.round((hub.topicsDone / hub.topics) * 100) : 0;
+  const open = state === "available" || state === "completed";
+  return (
+    <li className={`hub-module is-${state}`}>
+      <div className="hub-module-head">
+        <div>
+          <p className="hub-module-number">Module {module.numeral} · {module.hours} program hours</p>
+          <h4>{open ? <Link href={`/curriculum/${module.slug}`}>{module.short_title}</Link> : module.short_title}</h4>
+        </div>
+        <span className={`badge ${BADGE_FOR_STATE[state]}`}>{MODULE_STATE_LABELS[state]}</span>
+      </div>
+      <p className="hub-module-explain">{moduleStateExplanation(state, module)}</p>
+      {open || hub.topicsDone > 0 ? (
+        <>
+          <div className="hub-progress">
+            <progress value={hub.topicsDone} max={hub.topics || 1} aria-label={`${module.short_title}: ${hub.topicsDone} of ${hub.topics} topics complete`} />
+            <span className="num">{hub.topicsDone} of {hub.topics} topics · {percent}%</span>
+          </div>
+          <details className="hub-courses">
+            <summary>Courses and assessment results <Icon name="chevron-right" className="disclosure-icon" /></summary>
+            <ul>
+              {hub.courses.map((course) => (
+                <li key={course.courseSlug}>
+                  <Link href={`/courses/${course.courseSlug}`}>{course.code} · {course.title}</Link>
+                  <span className="num">{course.topicsDone}/{course.topics} topics</span>
+                  <span className={`hub-result is-${course.assessment}`}>
+                    {course.assessment === "passed" ? `Passed · ${course.score}%`
+                      : course.assessment === "retry" ? `${course.score}% · retake needed`
+                      : course.assessment === "pending-review" ? "Awaiting grading"
+                      : course.assessment === "in-progress" ? "Assessment started"
+                      : "Assessment not taken"}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </details>
+        </>
+      ) : null}
+    </li>
+  );
+}
+
+function ResultsPanel({ hub, passMark }: { hub: AdvancedHub; passMark: number }) {
+  if (!hub.pendingGrading.length && !hub.recentFeedback.length) return null;
+  const latest = hub.recentFeedback[0];
+  return (
+    <section className="hub-results" id="results" data-tour="results" aria-labelledby="results-title">
+      <h3 id="results-title">Grading and feedback</h3>
+      <ul>
+        {hub.pendingGrading.map((course) => (
+          <li key={course.courseSlug} className="hub-result-row">
+            <Icon name="clock" />
+            <div>
+              <strong>{course.code} assessment is with your instructor</strong>
+              <p>Section A is marked. Your written work will be graded and your result will appear here with feedback.</p>
+            </div>
+          </li>
+        ))}
+        {latest ? (
+          <li className="hub-result-row">
+            <Icon name={latest.assessment === "passed" ? "check-circle" : "alert"} />
+            <div>
+              <strong>{latest.code} result: {latest.score}% · {latest.assessment === "passed" ? "Passed" : `below the ${passMark}% pass mark`}</strong>
+              {latest.feedback ? <blockquote className="hub-feedback">{latest.feedback}</blockquote> : null}
+              <Link href={`/courses/${latest.courseSlug}/assessment`}>{latest.assessment === "passed" ? "View the full result" : "Retake the assessment"}</Link>
+            </div>
+          </li>
+        ) : null}
+      </ul>
+    </section>
+  );
 }
 
 export default async function DashboardPage({
@@ -112,7 +212,7 @@ export default async function DashboardPage({
 }) {
   const student = await currentStudent();
   if (!student) redirect("/login");
-  const staffPreview = student ? await isCoursePreview(student) : false;
+  const staffPreview = await isCoursePreview(student);
   const nameParts = student.fullName.trim().split(/\s+/);
   const greetingName = /^(?:pastor )?godfrey ekhomu$/i.test(nameParts.join(" "))
     ? "Pastor Godfrey"
@@ -121,520 +221,231 @@ export default async function DashboardPage({
   const { access, payment, password } = await searchParams;
   const { program, grading } = getCurriculum();
   const allEnrollments = await db.getEnrollmentsForStudent(student.id);
-  const enrolledInBelievers = belongsToBelievers(allEnrollments);
-  const enrollments = currentAdvancedEnrollments(allEnrollments);
-  const showAdvanced = enrollments.length > 0 || staffPreview;
-  const [progress, engagement, scholarshipApplications] = await Promise.all([
-    showAdvanced ? db.getProgress(student.id) : [],
-    showAdvanced ? db.getCommunityEngagement(student.id) : { posts: 0, credits: 0 },
-    showAdvanced ? db.getScholarshipApplicationsForStudent(student.id) : [],
-  ]);
-  const statuses = getModuleStatuses().filter(({ module }) => staffPreview ||
-    enrollments.some((e) => e.product === "advanced" || e.product === module.slug) ||
-    hasStudyAccess(student, enrollments, module.slug));
+  const advancedEnrollments = currentAdvancedEnrollments(allEnrollments);
+  const inAdvanced = advancedEnrollments.length > 0;
 
-  const ministerWaiver = hasMinisterWaiver(enrollments);
-  const pending = ministerWaiver ? [] : enrollments.filter((e) => e.status === "pending");
-  const stripeConfigured = isStripeCheckoutConfigured();
-  const paymentAttempts = await listLatestStripePaymentAttempts(
-    pending.map((enrollment) => enrollment.id)
-  );
-  const scholarshipsByEnrollment = new Map(
-    scholarshipApplications.map((application) => [application.enrollmentId, application])
-  );
-  const moduleNames = new Map(
-    getCurriculum().modules.map((module) => [module.slug, module.short_title])
-  );
-  const paymentMessage = ministerWaiver ? { tone: "good", text: "Your ordained-minister tuition waiver is active for the full program. No tuition payment is required. Please do not use any older checkout links; contact kti@kingsword.org if you have already paid." } : payment ? paymentMessages[payment] : null;
+  // Only students in the Advanced Certificate need its progress, grades, and payment records.
+  const [progress, assessments, scholarshipApplications, engagement] = inAdvanced
+    ? await Promise.all([
+      db.getProgress(student.id),
+      db.getLatestAssessmentSubmissions(student.id),
+      db.getScholarshipApplicationsForStudent(student.id),
+      db.getCommunityEngagement(student.id),
+    ])
+    : [[], [], [], { posts: 0, credits: 0 }];
+
+  const courseStatuses = inAdvanced ? getCourseStatuses() : [];
+  const courseReady = new Set(courseStatuses.filter((status) => status.complete).map((status) => status.course.slug));
+  const lessonTitles = new Map<string, string>();
+  for (const status of courseStatuses.filter((s) => s.available)) {
+    for (const row of getLessonRows(status.module, status.course)) lessonTitles.set(row.id, row.title);
+  }
+
+  const programs = buildStudentHub({
+    student,
+    enrollments: allEnrollments,
+    progress,
+    assessments,
+    scholarships: scholarshipApplications,
+    courseReady,
+    lessonTitles,
+    passMark: grading.pass_mark,
+    contactEmail: program.contact.email,
+  });
+
+  const ministerWaiver = hasMinisterWaiver(advancedEnrollments);
+  const pending = ministerWaiver ? [] : advancedEnrollments.filter((e) => e.status === "pending");
+  const paymentMessage = ministerWaiver
+    ? { tone: "good", text: "Your ordained-minister tuition waiver is active for the full program. No tuition payment is required. Please do not use any older checkout links; contact kti@kingsword.org if you have already paid." }
+    : payment ? paymentMessages[payment] ?? null : null;
   const passwordMessage = password ? passwordMessages[password] : null;
   const accessMessage = access ? accessMessages[access] : null;
-  const paymentDetails = {
-    accountName: process.env.PAYMENT_BANK_ACCOUNT_NAME?.trim(),
-    bankName: process.env.PAYMENT_BANK_NAME?.trim(),
-    accountNumber: process.env.PAYMENT_BANK_ACCOUNT_NUMBER?.trim(),
-    routingNumber: process.env.PAYMENT_BANK_ROUTING_NUMBER?.trim(),
-  };
-  const canShowPaymentDetails = Object.values(paymentDetails).every(Boolean);
-
-  // A student who has paid but whose first module has not opened yet is in a
-  // real state of its own: nothing to pay, nothing to study, and a date to
-  // wait for. Without this they were told only how many topics they had
-  // completed, which reads as zero progress rather than "you are in".
-  const activeStatuses = statuses.filter(
-    ({ module }) => hasStudyAccess(student, enrollments, module.slug)
-  );
-  const openNow = activeStatuses.filter((status) => status.available);
-  const nextOpening =
-    activeStatuses
-      .filter((status) => !status.available)
-      .sort((a, b) => a.module.release_date.localeCompare(b.module.release_date))[0] ?? null;
-  const awaitingFirstModule = Boolean(nextOpening) && openNow.length === 0;
-  const trackedModules = openNow.map(({ module }) => module);
-  const assessmentRecords = await Promise.all(trackedModules.flatMap((module) => module.courses.map((course) => db.getLatestAssessmentSubmission(student.id, course.slug))));
+  const multiple = programs.length > 1;
 
   return (
-    <main className="shell" id="main-content" tabIndex={-1}>
-      <LearningModeBanner student={student} preview={staffPreview} />
-      <div className="pagehead">
-        <div className="eyebrow">{program.institute}</div>
-        <h1>Welcome, {greetingName}</h1>
-        <p className="deck">
-          {progress.length
-            ? `${progress.length} ${progress.length === 1 ? "topic" : "topics"} completed.`
-            : awaitingFirstModule
-              ? "Your place is confirmed. Nothing else is needed from you before study opens."
-              : "Your studies start here."}
-        </p>
-      </div>
-
-      {isStaff(student) ? (
-        <Link href="/admin" className="staff-entry">
-          <span className="staff-entry-label">
-            {student.role === "admin" ? "Administrator" : "Staff"} access
-          </span>
-          <strong>Open operations</strong>
-          <span className="staff-entry-hint">
-            Registrations, payments, scholarships, grading, and every account on the course.
-          </span>
-        </Link>
-      ) : null}
-      <section aria-labelledby="my-programs">
-        <h2 id="my-programs">My programs</h2>
-        {enrolledInBelievers && <p><Link href="/programs/believers-training#classes">Continue Believers Training</Link></p>}
-        {enrollments.length > 0 && <p><a href="#advanced-study">Advanced Certificate studies</a></p>}
-        {!enrolledInBelievers && !showAdvanced && <p>Choose a program to begin.</p>}
-        <Link href="/programs">Browse all programs</Link>
-      </section>
-      {showAdvanced && <>
-      <div id="advanced-study" data-tour="access"><LaunchAccessNotice signedIn /></div>
-      <section className="module-update" aria-labelledby="november-update-title">
-        <div className="eyebrow">Advanced Certificate · <time dateTime="2026-11-18">November 18, 2026</time></div>
-        <h2 id="november-update-title">This week’s student video</h2>
-        <video controls playsInline preload="metadata" width={816} height={540} aria-labelledby="november-update-title">
-          <source src="/assets/kti-student-update-2026-11-18.mp4" type="video/mp4" />
-        </video>
-        <p><a href="/assets/kti-student-update-2026-11-18.mp4">Open the video in a new page</a></p>
-      </section>
-      <StudentWalkthrough />
-      {trackedModules.map((module) => <StudentModuleProgress key={module.slug} module={module} progress={progress} assessments={assessmentRecords} preview={staffPreview} />)}
-      {trackedModules.some((module) => module.number === 1) ? <ModuleOneUpdate /> : null}
-      {accessMessage ? (
-        <div className={`notice ${accessMessage.tone}`} role="alert">
-          {accessMessage.text}
-        </div>
-      ) : null}
-
-      {/*
-        * One panel serving two states. A student still owing tuition gets the
-        * orientation video framed as a welcome; a paid student waiting on the
-        * release gets the opening date instead, because "complete payment to
-        * unlock" is the wrong thing to say to someone who has already paid.
-        */}
-      {enrollments.length ? (
-        <section data-tour="welcome"
-          className={`welcome-video${awaitingFirstModule ? " is-enrolled" : ""}`}
-          aria-labelledby="welcome-video-title"
-        >
-          <div className="welcome-video-copy">
-            <div className="eyebrow">
-              {awaitingFirstModule ? "You are enrolled" : "Start here"}
-            </div>
-            <h2 id="welcome-video-title">
-              {awaitingFirstModule && nextOpening
-                ? `${nextOpening.module.short_title} opens ${formatModuleReleaseDate(nextOpening.module)}`
-                : program.welcome_video?.title ?? "Thank you for registering"}
-            </h2>
-            <p>
-              {awaitingFirstModule
-                ? `Your enrollment is active and your place is reserved. Module ${nextOpening?.module.numeral} unlocks on release day and appears here automatically — watch the orientation below in the meantime.`
-                : `Watch Dr. Kay’s welcome to the ${program.title} before you begin Module 1.`}
-            </p>
-            {program.welcome_video?.speaker ? (
-              <p className="welcome-video-meta">
-                <strong>{program.welcome_video.speaker}</strong>
-                {program.welcome_video.duration ? (
-                  <>
-                    <span aria-hidden="true">&middot;</span>
-                    {program.welcome_video.duration}
-                  </>
-                ) : null}
-              </p>
-            ) : null}
-          </div>
-          {program.welcome_video?.url ? (
-            <div className="welcome-video-frame">
-              <video
-                src={program.welcome_video.url}
-                poster={program.welcome_video.poster ?? undefined}
-                controls
-                playsInline
-                preload="metadata"
-                aria-label={program.welcome_video.title ?? "Thank you for registering"}
-              />
-            </div>
-          ) : null}
-        </section>
-      ) : null}
-
-      {pending.length && !staffPreview ? (
-        <section
-          id="complete-payment"
-          className="pending-payment"
-          aria-labelledby="pending-payment-title"
-        >
-          <div className="payment-heading">
-            <div>
-              <div className="eyebrow">Enrollment reserved</div>
-              <h2 id="pending-payment-title">Complete your enrollment</h2>
-            </div>
-            <span className="secure-payment-mark">
-              {stripeConfigured ? "Secure checkout by Stripe" : "Bank transfer available"}
-            </span>
-          </div>
-          <p>
-            Your account is ready. Apply an approved full-tuition code, pay securely by card,
-            or use the bank-transfer option. Module 1 opens to everyone registered. Later modules require payment or an approved scholarship/waiver covering that module.
-          </p>
-
-          {paymentMessage ? (
-            <div className={`notice ${paymentMessage.tone}`} role="status">
-              {paymentMessage.text}
-            </div>
-          ) : null}
-
-          <div className="pending-enrollment-list">
-            {pending.map((enrollment) => {
-              const attempt = paymentAttempts.get(enrollment.id);
-              const paymentInFlight = attempt?.status === "processing";
-              const staffReview =
-                attempt?.needsReview ||
-                attempt?.status === "partially-refunded" ||
-                attempt?.status === "disputed";
-              const canOpenCheckout = stripeConfigured && !paymentInFlight && !staffReview;
-              const scholarship = scholarshipsByEnrollment.get(enrollment.id);
-              const paymentTiming = getPaymentReminderTiming(enrollment);
-              return (
-                <article className="pending-enrollment" key={enrollment.id}>
-                  <div>
-                    <span className="pending-enrollment-plan">
-                      {enrollment.plan === "advanced" ? "Full program" : "Single certificate"}
-                    </span>
-                    <h3>
-                      {enrollment.product === "advanced"
-                        ? "Advanced Certificate in Biblical Studies"
-                        : moduleNames.get(enrollment.product) ?? enrollment.product}
-                    </h3>
-                    <strong>{tuition(enrollment.amount, enrollment.currency)}</strong>
-                    {attempt ? (
-                      <span className={`payment-state ${attempt.status}`}>
-                        {paymentStatusLabels[attempt.status]}
-                      </span>
-                    ) : null}
-                    {paymentTiming ? (
-                      <div
-                        className={`payment-access-reminder${
-                          paymentTiming.daysUntilStart <= 0 ? " has-started" : ""
-                        }`}
-                      >
-                        <span>Payment deadline</span>
-                        <strong>
-                          {paymentTiming.daysUntilStart <= 0
-                            ? `Due from ${paymentTiming.startDateLabel}`
-                            : `Pay before ${paymentTiming.startDateLabel}`}
-                        </strong>
-                        <small>
-                          Module 1 is open to registered students from its release time. Later modules unlock after payment, an approved scholarship, or a verified tuition waiver is confirmed.
-                        </small>
-                      </div>
-                    ) : null}
-                  </div>
-                  <div className="pending-enrollment-actions">
-                    {canOpenCheckout && promotionCodesAllowed(enrollment.plan) ? (
-                      <div className="promo-redemption">
-                        <strong>Full-tuition promo</strong>
-                        <form action={beginStripeCheckout} className="promo-code-form">
-                          <input type="hidden" name="enrollmentId" value={enrollment.id} />
-                          <label htmlFor={`promotionCode-${enrollment.id}`}>Promo code</label>
-                          <div className="promo-code-row">
-                            <input
-                              id={`promotionCode-${enrollment.id}`}
-                              name="promotionCode"
-                              type="text"
-                              inputMode="text"
-                              autoComplete="off"
-                              autoCapitalize="characters"
-                              spellCheck={false}
-                              minLength={4}
-                              maxLength={40}
-                              pattern="[A-Za-z0-9-]{4,40}"
-                              placeholder="Enter code"
-                              required
-                            />
-                            <StripeCheckoutButton purpose="promotion" />
-                          </div>
-                        </form>
-                        <small>A valid 100%-off code continues without card or bank details.</small>
-                      </div>
-                    ) : null}
-                    {canOpenCheckout && promotionCodesAllowed(enrollment.plan) ? (
-                      <div className="payment-choice-divider"><span>or pay tuition</span></div>
-                    ) : null}
-                    {canOpenCheckout ? (
-                      <form action={beginStripeCheckout}>
-                        <input type="hidden" name="enrollmentId" value={enrollment.id} />
-                        <StripeCheckoutButton />
-                      </form>
-                    ) : paymentInFlight ? (
-                      <p className="payment-processing-note">
-                        Confirmation is in progress. Please do not submit another payment.
-                      </p>
-                    ) : staffReview ? (
-                      <p className="payment-processing-note">
-                        The KingsWord team is reviewing this payment. No further payment is needed.
-                      </p>
-                    ) : (
-                      <p className="payment-processing-note">
-                        Online checkout is being configured. Bank transfer remains available.
-                      </p>
-                    )}
-                    <div className={`scholarship-payment-option${scholarship ? ` ${scholarship.status}` : ""}`}>
-                      {scholarship?.status === "pending" ? (
-                        <>
-                          <strong>Scholarship under review</strong>
-                          <Link href={`/scholarship?enrollment=${enrollment.id}`}>View application status</Link>
-                        </>
-                      ) : scholarship?.status === "declined" ? (
-                        <>
-                          <strong>Scholarship application reviewed</strong>
-                          <Link href={`/scholarship?enrollment=${enrollment.id}`}>View decision and payment options</Link>
-                        </>
-                      ) : (
-                        <>
-                          <span>Unable to afford tuition?</span>
-                          <Link href={`/scholarship?enrollment=${enrollment.id}`}>Apply for a scholarship</Link>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                </article>
-              );
-            })}
-          </div>
-
-          <div className="payment-divider"><span>Bank transfer option</span></div>
-          {canShowPaymentDetails ? (
-            <>
-              <dl className="payment-details">
-                <div>
-                  <dt>Account name</dt>
-                  <dd>{paymentDetails.accountName}</dd>
-                </div>
-                <div>
-                  <dt>Bank</dt>
-                  <dd>{paymentDetails.bankName}</dd>
-                </div>
-                <div>
-                  <dt>Account number</dt>
-                  <dd>{paymentDetails.accountNumber}</dd>
-                </div>
-                <div>
-                  <dt>Routing number</dt>
-                  <dd>{paymentDetails.routingNumber}</dd>
-                </div>
-              </dl>
-              <p className="payment-note">
-                Use <strong>{student.email}</strong> as the transfer reference, then email your
-                receipt to <a href={`mailto:${program.contact.email}`}>{program.contact.email}</a>.
-              </p>
-            </>
+    <main id="main-content" tabIndex={-1} className="hub">
+      <header className="band hub-head">
+        <div className="wrap">
+          <h1>Welcome, {greetingName}</h1>
+          {programs.length ? (
+            <nav className="hub-programs" aria-label="Your programs" data-tour="programs">
+              {programs.map((item) => (
+                <a key={item.kind} href={`#program-${item.kind}`} className="hub-program-chip">
+                  <span>{item.kind === "believers" ? "Believers Training" : "Advanced Certificate"}</span>
+                  <small>{item.kind === "believers" ? "Free · open now" : item.planLabel}</small>
+                </a>
+              ))}
+            </nav>
           ) : (
-            <p>
-              Contact <a href={`mailto:${program.contact.email}`}>{program.contact.email}</a> for
-              payment instructions.
-            </p>
+            <p className="deck">You are signed in as {student.email}.</p>
           )}
-        </section>
-      ) : null}
-
-      <h2>Your program</h2>
-      {staffPreview ? (
-        <div className="notice">
-          <strong>Preview the program before launch.</strong> Your preview access lets you review
-          completed course content without payment or waiting for student release dates.
-          Previewing does not record grades or student progress.
         </div>
-      ) : null}
-      <div className="cards five">
-        {statuses.map(({ module, available, coursesComplete }) => {
-          const enrollmentState = getModuleEnrollmentState(enrollments, module.slug);
-          const unlocked = hasStudyAccess(student, enrollments, module.slug);
-          const statusClass =
-            (staffPreview && coursesComplete > 0) || (unlocked && available)
-              ? "now"
-              : enrollmentState === "pending"
-                ? "reserved"
-                : "soon";
-          const statusLabel =
-            staffPreview
-              ? coursesComplete > 0 ? "Course preview" : "Content in preparation"
-              : unlocked && available ? "Ready to study"
-              : module.number === 1 ? moduleReleaseLabel(module)
-              : enrollmentState === "none"
-              ? "Not included"
-              : enrollmentState === "pending"
-                ? "Included"
-                : enrollmentState === "suspended"
-                  ? "Access on hold"
-                  : available
-                    ? "Ready"
-                    : moduleReleaseLabel(module);
-          const contactHref = `mailto:${program.contact.email}?subject=${encodeURIComponent(
-            `Add ${module.short_title} certificate`
-          )}`;
-          return (
-            <div data-tour={module.number === 1 ? "module" : undefined} className="card" key={module.slug}>
-              <div className="cardtop">
-                <span className="eyebrow">
-                  Module {module.numeral} &middot; {module.hours} hrs
-                </span>
-                <span className={`avail ${statusClass}`}>{statusLabel}</span>
-              </div>
-              <span className="t">{module.short_title}</span>
-              <p>{module.catalog_blurb}</p>
-              {!staffPreview && module.number > 1 && !unlocked ? <p className="hint">Payment or an approved scholarship/minister waiver is required before you can start this module.</p> : null}
-              <span className="foot">
-                {staffPreview ? (
-                  <Link href={`/curriculum/${module.slug}`}>
-                    {coursesComplete > 0 ? "Preview courses →" : "View module overview →"}
-                  </Link>
-                ) : unlocked && available ? (
-                  <Link href={`/curriculum/${module.slug}`}>Start studying →</Link>
-                ) : unlocked ? (
-                  moduleReleaseLabel(module)
-                ) : module.number === 1 ? (
-                  <Link href={`/curriculum/${module.slug}`}>{moduleReleaseLabel(module)}</Link>
-                ) : enrollmentState === "pending" ? (
-                  <Link href="#complete-payment">Complete payment to unlock →</Link>
-                ) : enrollmentState === "suspended" ? (
-                  <a href={`mailto:${program.contact.email}`}>Contact KTI about access →</a>
-                ) : (
-                  <a href={contactHref}>Ask about adding this certificate →</a>
-                )}
-              </span>
-            </div>
-          );
-        })}
-      </div>
+      </header>
 
-      <h2 style={{ marginTop: 44 }}>How you are graded</h2>
-      <p className="deck" style={{ maxWidth: "62ch" }}>
-        You need <strong>{grading.pass_mark}%</strong> to pass. You cannot move on to the next
-        topic or course until you have passed the one before it.
-      </p>
-      <div className="tablewrap" style={{ maxWidth: "62ch" }}>
-        <table>
-          <thead>
-            <tr>
-              <th>Component</th>
-              <th>Weight</th>
-            </tr>
-          </thead>
-          <tbody>
-            {grading.components.map((c) => (
-              <tr key={c.name}>
-                <td>{c.name}</td>
-                <td>{c.weight}%</td>
-              </tr>
-            ))}
-            <tr>
-              <td>
-                <strong>Pass mark</strong>
-              </td>
-              <td>
-                <strong>{grading.pass_mark}%</strong>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-      <div className="pillrow" style={{ marginTop: 14 }}>
-        {grading.scale.map((s) => (
-          <span className={`pill ${s.grade === "F" ? "quiet" : "ok"}`} key={s.grade}>
-            {s.grade} &middot; {s.range}
-          </span>
-        ))}
-      </div>
-
-      <section data-tour="community" className="dashboard-community">
-        <div>
-          <div className="eyebrow">Learning in community</div>
-          <h2>Keep the conversation going.</h2>
-          <p>
-            You have recorded {engagement.posts} community {engagement.posts === 1 ? "contribution" : "contributions"}
-            {" "}and {engagement.credits} engagement {engagement.credits === 1 ? "credit" : "credits"}.
-            Thoughtful participation is encouraged and can be reviewed for extra-credit opportunities.
-          </p>
-        </div>
-        <Link href="/community" className="btn quiet lg">
-          Open community groups
-        </Link>
-      </section>
-
-      </>}
-      <section className="panel" id="password" style={{ marginTop: 44, scrollMarginTop: 90 }}>
-        <h2>Change your password</h2>
-        <p>
-          Choose something only you know, at least 10 characters. You will be asked to sign in
-          again after the change, and previous sessions will be signed out.
-        </p>
-
-        {passwordMessage ? (
-          <div className={`notice ${passwordMessage.tone}`} role="status">
-            {passwordMessage.text}
-          </div>
+      <div className="wrap hub-body">
+        <LearningModeBanner student={student} preview={staffPreview} />
+        {accessMessage ? <div className={`notice ${accessMessage.tone}`} role="alert">{accessMessage.text}</div> : null}
+        {passwordMessage ? <div className={`notice ${passwordMessage.tone}`} role="status">{passwordMessage.text}</div> : null}
+        {isStaff(student) ? (
+          <Link href="/admin" className="staff-entry">
+            <span className="staff-entry-label">{student.role === "admin" ? "Administrator" : "Staff"} access</span>
+            <strong>Open staff operations</strong>
+            <span className="staff-entry-hint">Registrations, payments, scholarships, grading, and every account on the course.</span>
+          </Link>
         ) : null}
 
-        <form action={changeOwnPassword} className="password-form">
-          <label htmlFor="currentPassword">Current password</label>
-          <input
-            id="currentPassword"
-            name="currentPassword"
-            type="password"
-            autoComplete="current-password"
-            required
-          />
+        {staffPreview ? (
+          <section className="hub-program" aria-labelledby="preview-title">
+            <h2 id="preview-title">Course preview</h2>
+            <p>Your preview access lets you review completed course content without payment or waiting for student release dates. Previewing does not record grades or student progress.</p>
+            <ul className="hub-preview-list">
+              {getModuleStatuses().map(({ module, coursesComplete }) => (
+                <li key={module.slug}>
+                  <span>Module {module.numeral} · {module.short_title}</span>
+                  <Link href={`/curriculum/${module.slug}`}>{coursesComplete > 0 ? "Preview courses →" : "View module overview →"}</Link>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ) : null}
 
-          <label htmlFor="newPassword">New password</label>
-          <input
-            id="newPassword"
-            name="newPassword"
-            type="password"
-            autoComplete="new-password"
-            minLength={10}
-            required
-          />
+        {!programs.length && !staffPreview ? (
+          <section className="hub-program hub-empty" aria-labelledby="empty-title">
+            <h2 id="empty-title">You have not joined a program yet</h2>
+            <p>Choose a program to start studying. Believers Training is free and opens as soon as you join. The Advanced Certificate enrolls by intake; its page shows whether registration is open.</p>
+            <NextStep action={CHOOSE_PROGRAM_ACTION} tour />
+            <p><Link href="/programs#program-believers">Compare program hours and availability</Link></p>
+          </section>
+        ) : null}
 
-          <label htmlFor="confirmPassword">Confirm new password</label>
-          <input
-            id="confirmPassword"
-            name="confirmPassword"
-            type="password"
-            autoComplete="new-password"
-            minLength={10}
-            required
-          />
+        {programs.map((item, index) => item.kind === "believers" ? (
+          <section key="believers" id="program-believers" className="hub-program" aria-labelledby="believers-title">
+            <div className="hub-program-head">
+              <h2 id="believers-title">Believers Training</h2>
+              <span className="badge open">Enrolled</span>
+            </div>
+            <NextStep action={item.next} tour={index === 0} />
+            <div className="hub-believers" data-tour="believers-path">
+              <div>
+                <h3>Your seven-class path</h3>
+                <ol className="hub-class-list">
+                  {BELIEVERS_CLASSES.map((lesson, n) => (
+                    <li key={lesson.videoId}><Link href={`/programs/believers-training#class-${n + 1}`}><span className="num">{n + 1}</span>{lesson.title}</Link></li>
+                  ))}
+                </ol>
+              </div>
+              <div className="hub-side-card">
+                <h3>Printable final assessment</h3>
+                <p>Download the 50-question assessment to give at your local church. You enter your church’s name and location first.</p>
+                <Link className="btn quiet" href="/programs/believers-training/assessment" data-tour="believers-assessment"><Icon name="download" /> Get the assessment</Link>
+              </div>
+            </div>
+          </section>
+        ) : (
+          <section key="advanced" id="program-advanced" className="hub-program" aria-labelledby="advanced-title">
+            <div className="hub-program-head">
+              <div>
+                <h2 id="advanced-title">{item.title}</h2>
+                <p className="hub-plan">{item.planLabel}{item.fundingLabel ? ` · ${item.fundingLabel}` : ""}</p>
+              </div>
+              <span className={`badge ${item.enrollmentStatus === "active" ? "open" : item.enrollmentStatus === "pending" ? "payment" : "hold"}`}>
+                {item.enrollmentStatus === "active" ? "Enrolled" : item.enrollmentStatus === "pending" ? "Payment due" : "Access on hold"}
+              </span>
+            </div>
+            <NextStep action={item.next} tour={index === 0 || !multiple} />
+            {item.modules.some((m) => m.module.number === 1 && m.state === "available") ? <ModuleOneDeadline /> : null}
+            <ResultsPanel hub={item} passMark={grading.pass_mark} />
 
-          <button type="submit" className="btn quiet">
-            Update password
-          </button>
-        </form>
-      </section>
+            <div className="hub-grid">
+              <section aria-labelledby="modules-title" data-tour="modules">
+                <h3 id="modules-title">Your modules</h3>
+                <ol className="hub-modules">
+                  {item.modules.map((hub) => <ModuleRow key={hub.module.slug} hub={hub} />)}
+                </ol>
+                {item.modules.length < getCurriculum().modules.length ? (
+                  <p className="hint">Your plan covers one certificate. <a href={`mailto:${program.contact.email}?subject=${encodeURIComponent("Add a KTI certificate")}`}>Ask KTI about adding another</a>.</p>
+                ) : null}
+              </section>
+              <aside className="hub-aside">
+                <section className="hub-side-card hub-video" aria-labelledby="weekly-video-title" data-tour="weekly-video">
+                  <h3 id="weekly-video-title">This week’s student video</h3>
+                  <p className="hint"><time dateTime="2026-11-18">November 18, 2026</time> · Dr. Kay Ijisesan</p>
+                  <video controls playsInline preload="none" poster="/assets/kti-student-update-2026-11-18-poster.jpg" width={816} height={540} aria-labelledby="weekly-video-title">
+                    <source src="/assets/kti-student-update-2026-11-18.mp4" type="video/mp4" />
+                  </video>
+                  <p><a href="/assets/kti-student-update-2026-11-18.mp4">Open the video in a new page</a></p>
+                </section>
+                <section className="hub-side-card" aria-labelledby="community-title" data-tour="community">
+                  <h3 id="community-title">Community groups</h3>
+                  <p>{engagement.posts} {engagement.posts === 1 ? "contribution" : "contributions"} · {engagement.credits} engagement {engagement.credits === 1 ? "credit" : "credits"}. Ask questions and share reflections with classmates and instructors.</p>
+                  <Link className="btn quiet" href="/community"><Icon name="message" /> Open community groups</Link>
+                </section>
+              </aside>
+            </div>
 
-      <form action={signOut} style={{ marginTop: 44 }}>
-        <button type="submit" className="btn">
-          Sign out
-        </button>
-      </form>
+            {pending.length && !staffPreview ? (
+              <PaymentPanel student={student} pending={pending} scholarshipApplications={scholarshipApplications} paymentMessage={paymentMessage} />
+            ) : paymentMessage ? (
+              <div className={`notice ${paymentMessage.tone}`} role="status">{paymentMessage.text}</div>
+            ) : null}
+
+            <div className="hub-more">
+              <details>
+                <summary>How you are graded <Icon name="chevron-right" className="disclosure-icon" /></summary>
+                <p>You need <strong>{grading.pass_mark}%</strong> to pass. Each course assessment has Section A (40 points, marked instantly) and written work (60 points, graded by your instructor).</p>
+                <div className="tablewrap">
+                  <table>
+                    <thead><tr><th>Component</th><th>Weight</th></tr></thead>
+                    <tbody>
+                      {grading.components.map((c) => <tr key={c.name}><td>{c.name}</td><td>{c.weight}%</td></tr>)}
+                      <tr><td><strong>Pass mark</strong></td><td><strong>{grading.pass_mark}%</strong></td></tr>
+                    </tbody>
+                  </table>
+                </div>
+                <p className="hint">Grade scale: {grading.scale.map((s) => `${s.grade} ${s.range}`).join(" · ")}</p>
+              </details>
+              <DeferredDetails summary={<>Messages from Dr. Kay <Icon name="chevron-right" className="disclosure-icon" /></>}>
+                {program.welcome_video?.url ? (
+                  <section className="module-update" aria-labelledby="welcome-video-title">
+                    <h2 id="welcome-video-title">{program.welcome_video.title}</h2>
+                    <video src={program.welcome_video.url} poster={program.welcome_video.poster ?? undefined} controls playsInline preload="none" aria-label={program.welcome_video.title ?? "Welcome video"} />
+                  </section>
+                ) : null}
+                {item.modules.some((m) => m.module.number === 1 && (m.state === "available" || m.state === "completed")) ? <ModuleOneUpdate /> : null}
+              </DeferredDetails>
+              <p className="hint">New to KTI? <a href="/student-guide.pdf" target="_blank" rel="noopener noreferrer">Read the student quick-start guide (PDF)</a>.</p>
+            </div>
+          </section>
+        ))}
+
+        {programs.length ? <StudentWalkthrough /> : null}
+
+        <section className="hub-account" id="password" aria-labelledby="account-title">
+          <h2 id="account-title">Account</h2>
+          <details open={Boolean(passwordMessage)}>
+            <summary>Change your password <Icon name="chevron-right" className="disclosure-icon" /></summary>
+            <p>Choose something only you know, at least 10 characters. You will be asked to sign in again after the change, and previous sessions will be signed out.</p>
+            <form action={changeOwnPassword} className="password-form">
+              <div className="field">
+                <label htmlFor="currentPassword">Current password</label>
+                <input id="currentPassword" name="currentPassword" type="password" autoComplete="current-password" required />
+              </div>
+              <div className="field">
+                <label htmlFor="newPassword">New password</label>
+                <input id="newPassword" name="newPassword" type="password" autoComplete="new-password" minLength={10} required />
+              </div>
+              <div className="field">
+                <label htmlFor="confirmPassword">Confirm new password</label>
+                <input id="confirmPassword" name="confirmPassword" type="password" autoComplete="new-password" minLength={10} required />
+              </div>
+              <button type="submit" className="btn quiet">Update password</button>
+            </form>
+          </details>
+          <form action={signOut}>
+            <button type="submit" className="btn">Sign out</button>
+          </form>
+        </section>
+      </div>
     </main>
   );
 }

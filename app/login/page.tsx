@@ -30,7 +30,9 @@ export default async function LoginPage({
           <p className="sub">
             {staffSignIn
               ? "Use a Staff or Administrator account to continue to Staff Operations."
-              : "Continue your studies where you left off."}
+              : next.startsWith("/enroll")
+                ? "Sign in with your existing KTI account to join this program. You will come straight back here."
+                : "Continue your studies where you left off."}
           </p>
           {reset === "success" ? <div className="notice good" role="status">Your password has been updated. Previous sessions have been signed out. Sign in with your new password.</div> : null}
           <LoginForm next={next} />

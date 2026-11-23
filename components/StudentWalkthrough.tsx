@@ -1,25 +1,158 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 
-const STORAGE_KEY = "kti.student-walkthrough.v1";
-const STEPS = [
-  { target: "[data-tour='progress']", title: "Track your progress", body: "See your saved lesson completion, assessment results, and suggested study pace. Select Continue next topic to pick up where you left off." },
-  { target: "[data-tour='access']", title: "Your access", body: "Module 1 is open to registered students. This panel explains what is available now and what payment or approval is needed for later modules." },
-  { target: "[data-tour='module']", title: "Start Module 1", body: "Open Systematic Theology here. Work through each lesson in order and use the textbook, PDF, and audio resources." },
-  { target: "[data-tour='welcome']", title: "Watch the welcome", body: "Dr. Kay’s welcome video explains the certificate and how to get started. Press play whenever you are ready." },
-  { target: "[data-tour='community']", title: "Learn together", body: "Use the community groups to ask questions and share reflections with your classmates and instructors." },
-];
+const STORAGE_KEY = "kti.student-walkthrough.v2";
+const CHANGE_EVENT = "kti-walkthrough-change";
+
+/**
+ * Every step names a `data-tour` target on My studies. Steps whose target is
+ * not on this student's page (no payment due, no results yet, not in
+ * Believers Training) are skipped, so the tour never points at nothing.
+ */
+export const WALKTHROUGH_STEPS = [
+  { target: "programs", title: "Your programs", body: "Each program you belong to has its own section on this page. Tap a name to jump to it." },
+  { target: "next-step", title: "Your next step", body: "This card shows the one thing to do next, chosen from your progress, payments, and release dates. It updates as you study." },
+  { target: "results", title: "Grading and feedback", body: "Submitted assessments waiting for your instructor, and your latest result with feedback, appear here." },
+  { target: "modules", title: "Your modules", body: "Each module says whether it is available, awaiting payment, scheduled, or completed, and what you can do now." },
+  { target: "payment", title: "Complete your enrollment", body: "Pay tuition by card or bank transfer, apply a full-tuition code, or apply for a scholarship here." },
+  { target: "weekly-video", title: "This week’s video", body: "Dr. Kay’s latest student update. Press play whenever you are ready." },
+  { target: "believers-path", title: "Believers Training classes", body: "Your seven classes in order, and the printable final assessment to take with your church." },
+  { target: "community", title: "Learn together", body: "Ask questions and share reflections with classmates and instructors in the community groups." },
+] as const;
+
+const selector = (target: string) => `[data-tour='${target}']`;
+
+function subscribe(onChange: () => void) {
+  window.addEventListener("storage", onChange);
+  window.addEventListener(CHANGE_EVENT, onChange);
+  return () => {
+    window.removeEventListener("storage", onChange);
+    window.removeEventListener(CHANGE_EVENT, onChange);
+  };
+}
+
+function readSeen(): boolean {
+  try {
+    return window.localStorage.getItem(STORAGE_KEY) === "complete";
+  } catch {
+    return true;
+  }
+}
+
+function markSeen() {
+  try {
+    window.localStorage.setItem(STORAGE_KEY, "complete");
+  } catch {
+    /* storage unavailable: the tour simply shows again next visit */
+  }
+  window.dispatchEvent(new Event(CHANGE_EVENT));
+}
+
+type Box = { top: number; left: number; width: number; height: number; cardAtTop: boolean };
 
 export default function StudentWalkthrough() {
-  const [open, setOpen] = useState(false);
+  // Server and first client render agree on "seen" so nothing flashes during hydration.
+  const seen = useSyncExternalStore(subscribe, readSeen, () => true);
+  const [manual, setManual] = useState<boolean | null>(null);
   const [step, setStep] = useState(0);
-  const [rect, setRect] = useState<DOMRect | null>(null);
-  const close = useCallback(() => { setOpen(false); window.localStorage.setItem(STORAGE_KEY, "complete"); }, []);
-  const locate = useCallback(() => { if (!open) return; const element = document.querySelector(STEPS[step].target); setRect(element?.getBoundingClientRect() ?? null); element?.scrollIntoView({ behavior: "smooth", block: "center" }); }, [open, step]);
-  useEffect(() => { if (window.localStorage.getItem(STORAGE_KEY) !== "complete") setOpen(true); }, []);
-  useEffect(() => { locate(); if (!open) return; const update = () => locate(); window.addEventListener("resize", update); window.addEventListener("scroll", update, { passive: true }); return () => { window.removeEventListener("resize", update); window.removeEventListener("scroll", update); }; }, [locate, open]);
-  if (!open) return <button className="walkthrough-replay" type="button" onClick={() => { setStep(0); setOpen(true); }}>Show walkthrough again</button>;
-  const current = STEPS[step];
-  return <div className="walkthrough-layer" role="dialog" aria-modal="true" aria-labelledby="walkthrough-title"><div className="walkthrough-dim" onClick={close} />{rect ? <div className="walkthrough-focus" style={{ top: rect.top - 8, left: rect.left - 8, width: rect.width + 16, height: rect.height + 16 }} /> : null}<section className="walkthrough-card"><div className="walkthrough-progress">Step {step + 1} of {STEPS.length}</div><h2 id="walkthrough-title">{current.title}</h2><p>{current.body}</p><div className="walkthrough-actions"><button type="button" className="btn quiet" onClick={close}>Skip tour</button>{step > 0 ? <button type="button" className="btn" onClick={() => setStep(step - 1)}>Back</button> : null}<button type="button" className="btn primary" onClick={() => step === STEPS.length - 1 ? close() : setStep(step + 1)}>{step === STEPS.length - 1 ? "Finish" : "Next"}</button></div></section></div>;
+  const [box, setBox] = useState<Box | null>(null);
+  const heading = useRef<HTMLHeadingElement>(null);
+  const replay = useRef<HTMLButtonElement>(null);
+  const card = useRef<HTMLElement>(null);
+  const open = manual ?? !seen;
+
+  // Only steps whose control is on this student's page, in the order the page shows them.
+  const steps = open && typeof document !== "undefined"
+    ? WALKTHROUGH_STEPS
+      .map((item) => ({ item, element: document.querySelector(selector(item.target)) }))
+      .filter((entry): entry is { item: (typeof WALKTHROUGH_STEPS)[number]; element: Element } => Boolean(entry.element))
+      .sort((a, b) => (a.element.compareDocumentPosition(b.element) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1))
+      .map((entry) => entry.item)
+    : [];
+  const current = steps[Math.min(step, Math.max(0, steps.length - 1))];
+  const target = current?.target ?? null;
+
+  function close() {
+    markSeen();
+    setManual(false);
+    replay.current?.focus();
+  }
+
+  useEffect(() => {
+    if (!open || !target) return;
+    const measure = () => {
+      const element = document.querySelector(selector(target));
+      if (!element) return setBox(null);
+      const rect = element.getBoundingClientRect();
+      const viewport = window.innerHeight;
+      const cardHeight = (card.current?.offsetHeight ?? 200) + 32;
+      let top = Math.max(rect.top, 0);
+      let bottom = Math.min(rect.bottom, viewport);
+      // Keep the card off the highlighted control: a target low on screen sends the card up,
+      // and a target taller than the space left is highlighted only where it is visible.
+      const cardAtTop = rect.top > viewport * 0.5;
+      if (cardAtTop) top = Math.max(top, 76 + cardHeight - 20);
+      else bottom = Math.min(bottom, viewport - cardHeight);
+      setBox({
+        top: top - 6,
+        left: Math.max(rect.left - 6, 4),
+        width: Math.min(rect.width + 12, window.innerWidth - 8),
+        height: Math.max(bottom - top + 12, 0),
+        cardAtTop,
+      });
+    };
+    const element = document.querySelector(selector(target));
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    element?.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
+    const settle = window.setTimeout(measure, reduce ? 0 : 380);
+    const frame = window.requestAnimationFrame(measure);
+    heading.current?.focus();
+    window.addEventListener("resize", measure);
+    window.addEventListener("scroll", measure, { passive: true });
+    return () => {
+      window.clearTimeout(settle);
+      window.cancelAnimationFrame(frame);
+      window.removeEventListener("resize", measure);
+      window.removeEventListener("scroll", measure);
+    };
+  }, [open, target]);
+
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      markSeen();
+      setManual(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open]);
+
+  if (!open || !current) {
+    return (
+      <button ref={replay} className="walkthrough-replay text-link" type="button" onClick={() => { setStep(0); setBox(null); setManual(true); }}>
+        Take the tour of this page
+      </button>
+    );
+  }
+
+  const index = steps.indexOf(current);
+  const last = index === steps.length - 1;
+  return (
+    <div className="walkthrough-layer" role="dialog" aria-modal="true" aria-labelledby="walkthrough-title">
+      <div className="walkthrough-dim" onClick={close} />
+      {box ? <div className="walkthrough-focus" style={{ top: box.top, left: box.left, width: box.width, height: box.height }} /> : null}
+      <section ref={card} className={`walkthrough-card${box?.cardAtTop ? " at-top" : ""}`}>
+        <p className="walkthrough-progress">Step {index + 1} of {steps.length}</p>
+        <h2 id="walkthrough-title" ref={heading} tabIndex={-1}>{current.title}</h2>
+        <p>{current.body}</p>
+        <div className="walkthrough-actions">
+          <button type="button" className="btn quiet sm" onClick={close}>Skip tour</button>
+          {index > 0 ? <button type="button" className="btn sm" onClick={() => setStep(index - 1)}>Back</button> : null}
+          <button type="button" className="btn primary sm" onClick={() => (last ? close() : setStep(index + 1))}>{last ? "Finish" : "Next"}</button>
+        </div>
+      </section>
+    </div>
+  );
 }

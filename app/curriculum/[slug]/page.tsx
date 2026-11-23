@@ -12,7 +12,9 @@ import { hasStudyAccess } from "@/lib/access";
 import { db } from "@/lib/db";
 import { CourseBook } from "@/components/CourseBook";
 import StudentModuleProgress from "@/components/StudentModuleProgress";
-import ModuleOneUpdate from "@/components/ModuleOneUpdate";
+import { currentAdvancedEnrollments } from "@/lib/program-membership";
+import { buildStudentHub, MODULE_STATE_LABELS, moduleStateExplanation } from "@/lib/student-hub";
+import ModuleOneUpdate, { ModuleOneDeadline } from "@/components/ModuleOneUpdate";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -42,6 +44,16 @@ export default async function ModulePage({ params }: Props) {
     db.getProgress(actor.id),
     Promise.all(module.courses.map((course) => db.getLatestAssessmentSubmission(actor.id, course.slug))),
   ]) : [[], []];
+  // Signed-in students see where they stand on this module and what they can do.
+  const myState = actor && !staffPreview && currentAdvancedEnrollments(enrollments).length
+    ? buildStudentHub({
+      student: actor,
+      enrollments,
+      progress,
+      assessments,
+      courseReady: new Set(statuses.filter((status) => status.complete).map((status) => status.course.slug)),
+    }).flatMap((item) => item.kind === "advanced" ? item.modules : []).find((item) => item.module.slug === module.slug)?.state ?? null
+    : null;
   const videoBriefings = [
     {
       label: "Opening video",
@@ -89,9 +101,15 @@ export default async function ModulePage({ params }: Props) {
         </div>
       ) : null}
       <LaunchAccessNotice signedIn={Boolean(actor)} />
-      {!staffPreview && !canReadMaterials ? <p className="notice">{moduleReleaseLabel(module)}. {module.number === 1 ? "Sign in with your registered account to start at the opening time." : "Access requires a cleared enrollment covering this module. Complete payment or contact KTI about your approved scholarship or minister waiver."}</p> : null}
+      {myState ? (
+        <section className={`module-state is-${myState}`} aria-label="Your access to this module">
+          <span className={`badge ${myState === "available" ? "open" : myState === "completed" ? "done" : myState === "awaiting-payment" ? "payment" : myState === "on-hold" ? "hold" : "scheduled"}`}>{MODULE_STATE_LABELS[myState]}</span>
+          <p>{moduleStateExplanation(myState, module)}</p>
+          {myState === "awaiting-payment" ? <Link className="btn primary sm" href="/dashboard#complete-payment">See payment options</Link> : null}
+        </section>
+      ) : !staffPreview && !canReadMaterials ? <p className="notice">{moduleReleaseLabel(module)}. {module.number === 1 ? "Sign in with your registered account to start at the opening time." : "Access requires a cleared enrollment covering this module. Complete payment or contact KTI about your approved scholarship or minister waiver."}</p> : null}
       {actor && canReadMaterials ? <StudentModuleProgress module={module} progress={progress} assessments={assessments} preview={staffPreview} /> : null}
-      {module.number === 1 && canReadMaterials ? <ModuleOneUpdate /> : null}
+      {module.number === 1 && canReadMaterials ? <><ModuleOneDeadline /><ModuleOneUpdate /></> : null}
       <h2>Courses</h2>
       {actor && canReadMaterials ? <p><Link className="btn" href={`/curriculum/${module.slug}/thesis`}>Module thesis: instructions, submission and feedback</Link></p> : null}
       <div className="stack">

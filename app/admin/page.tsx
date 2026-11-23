@@ -15,7 +15,6 @@ import { listLatestPaymentReminders } from "@/lib/reminders/payment-reminder-sto
 
 import {
   activateEnrollment,
-  gradeAssessment,
   moderateCommunityPost,
   resetStudentPassword,
   setStudentRole,
@@ -194,11 +193,11 @@ export default async function AdminPage({
         </p>
       </header>
 
-      <AdminNav pendingScholarshipCount={pendingScholarships} />
+      <AdminNav pendingScholarshipCount={pendingScholarships} pendingGradingCount={assessments.length} />
 
       <div className="admin-overview-grid">
         <Link className="admin-overview-card" href="/admin/scholarships?status=pending"><span>Scholarships to review</span><strong>{pendingScholarships}</strong><small>Review financial assistance →</small></Link>
-        <Link className="admin-overview-card" href="#assessments"><span>Academic operations</span><strong>Assessment review</strong><small>Grade submitted work →</small></Link>
+        <Link className="admin-overview-card" href="/admin/grading"><span>Academic operations</span><strong>{assessments.length} to grade</strong><small>Open assessment grading →</small></Link>
         <Link className="admin-overview-card" href="/admin/settings"><span>People & permissions</span><strong>Admin settings</strong><small>Find accounts and manage access →</small></Link>
       </div>
 
@@ -447,29 +446,10 @@ export default async function AdminPage({
           <span>{assessments.length}</span>
         </div>
         {assessments.length ? (
-          <div className="admin-list">
-            {assessments.map((submission) => (
-              <article className="admin-card admin-card-stack" key={submission.id}>
-                <div>
-                  <strong>{submission.student.fullName} · {submission.courseSlug.toUpperCase()}</strong>
-                  <p>Section A: {submission.sectionAPoints}/40</p>
-                </div>
-                <div className="admin-response">{submission.writtenResponse}</div>
-                <form action={gradeAssessment} className="admin-grade-form">
-                  <input type="hidden" name="submissionId" value={submission.id} />
-                  <label>
-                    Written points (0 to 60)
-                    <input name="writtenPoints" type="number" min="0" max="60" required />
-                  </label>
-                  <label>
-                    Instructor feedback
-                    <textarea name="feedback" rows={4} required minLength={3} maxLength={3000} />
-                  </label>
-                  <button className="btn primary" type="submit">Record grade</button>
-                </form>
-              </article>
-            ))}
-          </div>
+          <p className="admin-form-note">
+            {assessments.length} written {assessments.length === 1 ? "assessment is" : "assessments are"} waiting.{" "}
+            <Link className="btn primary sm" href="/admin/grading">Open the grading screen</Link>
+          </p>
         ) : <p className="admin-empty">No written assessment is waiting for review.</p>}
       </section>
 

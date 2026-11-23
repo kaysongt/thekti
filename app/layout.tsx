@@ -1,10 +1,21 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
+import { Source_Sans_3, Source_Serif_4 } from "next/font/google";
 
 import Masthead from "@/components/Masthead";
 import SiteFooter from "@/components/SiteFooter";
 import { getCurriculum } from "@/lib/curriculum";
 
 import "./globals.css";
+import "./design-system.css";
+
+// Source Serif carries headings and long lessons; Source Sans carries controls,
+// labels, and data. Self-hosted by next/font, so no request goes to Google.
+const serif = Source_Serif_4({ subsets: ["latin"], variable: "--font-serif", display: "swap" });
+const sans = Source_Sans_3({ subsets: ["latin"], variable: "--font-sans", display: "swap" });
+
+export const viewport: Viewport = {
+  themeColor: "#0b1a36",
+};
 
 const { program } = getCurriculum();
 
@@ -42,7 +53,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   // server — an expected, deliberate mismatch, not a bug. suppressHydration-
   // Warning tells React to trust the DOM here instead of overwriting it.
   return (
-    <html lang="en" data-scroll-behavior="smooth" suppressHydrationWarning>
+    <html lang="en" data-scroll-behavior="smooth" className={`${serif.variable} ${sans.variable}`} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_BOOT }} />
       </head>

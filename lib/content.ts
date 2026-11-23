@@ -257,29 +257,54 @@ export type CourseStatus = {
   available: boolean;
 };
 
+/**
+ * Content files ship with the deployment and never change while it runs, so
+ * a production server reads each course's readiness once instead of
+ * re-reading ~400 lesson files on every dashboard, course, and lesson render.
+ * Development reads fresh so edits to content/ show up without a restart.
+ */
+const CACHE_CONTENT = process.env.NODE_ENV === "production";
+type Readiness = { lessons: number; written: number; todos: number; complete: boolean };
+const courseReadinessCache = new Map<string, Readiness>();
+const moduleTodoCache = new Map<string, { todos: number; hasDoc: boolean }>();
+
+function courseReadiness(module: Module, course: Course): Readiness {
+  const cached = CACHE_CONTENT ? courseReadinessCache.get(course.slug) : undefined;
+  if (cached) return cached;
+  const rows = getLessonRows(module, course);
+  const extra =
+    countTodos(module.slug, course.slug, "course.md") +
+    countTodos(module.slug, course.slug, "assessment.md");
+  const todos = rows.reduce((sum, r) => sum + r.todos, 0) + extra;
+  const complete = todos === 0 && rows.every((row) => row.written)
+    && Boolean(readDoc(module.slug, course.slug, "course.md").body.trim())
+    && Boolean(readDoc(module.slug, course.slug, "assessment.md").body.trim());
+  const readiness = { lessons: rows.length, written: rows.filter((r) => r.written).length, todos, complete };
+  if (CACHE_CONTENT) courseReadinessCache.set(course.slug, readiness);
+  return readiness;
+}
+
+function moduleDocReadiness(module: Module) {
+  const cached = CACHE_CONTENT ? moduleTodoCache.get(module.slug) : undefined;
+  if (cached) return cached;
+  const value = { todos: countTodos(module.slug, "module.md"), hasDoc: Boolean(readDoc(module.slug, "module.md").body.trim()) };
+  if (CACHE_CONTENT) moduleTodoCache.set(module.slug, value);
+  return value;
+}
+
 /** Content readiness and scheduled release are tracked independently. */
 export function getCourseStatuses(now = new Date()): CourseStatus[] {
   const out: CourseStatus[] = [];
   for (const module of getCurriculum().modules) {
+    const released = isModuleReleased(module, now);
     for (const course of module.courses) {
-      const rows = getLessonRows(module, course);
-      const extra =
-        countTodos(module.slug, course.slug, "course.md") +
-        countTodos(module.slug, course.slug, "assessment.md");
-      const todos = rows.reduce((sum, r) => sum + r.todos, 0) + extra;
-      const complete = todos === 0 && rows.every((row) => row.written)
-        && Boolean(readDoc(module.slug, course.slug, "course.md").body.trim())
-        && Boolean(readDoc(module.slug, course.slug, "assessment.md").body.trim());
-      const released = isModuleReleased(module, now);
+      const readiness = courseReadiness(module, course);
       out.push({
         course,
         module,
-        lessons: rows.length,
-        written: rows.filter((r) => r.written).length,
-        todos,
-        complete,
+        ...readiness,
         released,
-        available: complete && released,
+        available: readiness.complete && released,
       });
     }
   }
@@ -300,10 +325,9 @@ export function getModuleStatuses(now = new Date()): ModuleStatus[] {
   const statuses = getCourseStatuses(now);
   return getCurriculum().modules.map((module) => {
     const mine = statuses.filter((s) => s.module.slug === module.slug);
-    const todos =
-      mine.reduce((sum, s) => sum + s.todos, 0) + countTodos(module.slug, "module.md");
-    const complete = todos === 0 && mine.every((course) => course.complete)
-      && Boolean(readDoc(module.slug, "module.md").body.trim());
+    const doc = moduleDocReadiness(module);
+    const todos = mine.reduce((sum, s) => sum + s.todos, 0) + doc.todos;
+    const complete = todos === 0 && mine.every((course) => course.complete) && doc.hasDoc;
     const released = isModuleReleased(module, now);
     return {
       module,

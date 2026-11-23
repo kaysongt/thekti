@@ -1,54 +1,52 @@
 import Image from "next/image";
-import styles from "./ProgramImages.module.css";
 import Link from "next/link";
 
-const programs = [
-  {
-    href: "/programs/believers-training",
-    title: "Believers Training",
-    image: "/assets/programs/believers.webp",
-    description: "Build a foundation for following Jesus through seven video modules. Study online or complete the training with your local church.",
-    format: "Free · 7 essential classes · 21 program hours",
-  },
-  {
-    href: "/programs/advanced-certificate",
-    title: "Advanced Certificate",
-    image: "/assets/programs/advanced.webp",
-    description: "Study theology, biblical foundations, the Old and New Testaments, and spiritual formation in a structured certificate program.",
-    format: "Paid · One-year program",
-  },
-  {
-    href: "/programs#basic-certificates",
-    title: "Basic Certificates",
-    image: "/assets/programs/certificates.webp",
-    description: "Explore short-term Biblical Studies certificates for believers, ministry leaders, and church volunteers.",
-    format: "Coming soon · 40–50 program hours",
-  },
-  {
-    href: "/programs#specialized-academies",
-    title: "Specialized Academy",
-    image: "/assets/programs/academies.webp",
-    description: "Explore focused training in prayer, faith, leadership, relationships, and other areas of Christian life.",
-    format: "Coming soon · 20 program hours",
-  },
-];
+import Icon from "@/components/Icon";
+import { AVAILABILITY_LABELS, PROGRAMS, type ProgramSummary } from "@/lib/programs";
 
-export default function ProgramCatalog() {
+const ACTIONS: Record<ProgramSummary["key"], string> = {
+  believers: "Explore Believers Training",
+  advanced: "Explore the Advanced Certificate",
+  basic: "See the six certificate tracks",
+  specialized: "See the sixteen academies",
+};
+
+export function ProgramStatus({ program }: { program: ProgramSummary }) {
+  return <span className={`badge ${program.availability}`}>{AVAILABILITY_LABELS[program.availability]}</span>;
+}
+
+/** Each program answers who it serves, what students learn, and what comes next. */
+export default function ProgramCatalog({ headingLevel = 3 }: { headingLevel?: 2 | 3 }) {
+  const Heading = headingLevel === 2 ? "h2" : "h3";
   return (
-    <ul className="cards program-cards">
-      {programs.map(({ href, title, description, format, image }) => (
-        <li key={href}>
-          <Link href={href} className={styles.card}>
-            <Image src={image} alt="" width={834} height={469} sizes="(max-width: 640px) 100vw, 560px" />
-            <div className={styles.cardBody}>
-              <p className={styles.meta}>{format}</p>
-              <h2>{title}</h2>
-              <p>{description}</p>
-              <span className={styles.action}>Explore →</span>
+    <ol className="program-rows">
+      {PROGRAMS.map((program) => (
+        <li className="program-row" key={program.key} id={`program-${program.key}`}>
+          <Image
+            className="program-row-photo"
+            src={program.image}
+            alt={program.imageAlt}
+            width={834}
+            height={469}
+            sizes="(max-width: 760px) calc(100vw - 32px), 420px"
+          />
+          <div className="program-row-body">
+            <div className="program-row-head">
+              <Heading>{program.title}</Heading>
+              <ProgramStatus program={program} />
             </div>
-          </Link>
+            <p className="program-row-meta"><strong>{program.hoursLabel}</strong> · {program.priceLabel}</p>
+            <dl className="program-facts">
+              <div><dt>Who it serves</dt><dd>{program.audience}</dd></div>
+              <div><dt>What you will learn</dt><dd>{program.learn}</dd></div>
+              <div><dt>What comes next</dt><dd>{program.next}</dd></div>
+            </dl>
+            <Link className={`btn ${program.availability === "coming-soon" ? "quiet" : "primary"}`} href={program.href}>
+              {ACTIONS[program.key]} <Icon name="arrow-right" className="arrow" />
+            </Link>
+          </div>
         </li>
       ))}
-    </ul>
+    </ol>
   );
 }

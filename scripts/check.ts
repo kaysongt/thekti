@@ -6,6 +6,7 @@
 import assert from "node:assert/strict";
 import "./check-progress";
 import "./check-student-progress";
+import "./check-student-hub";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
@@ -546,6 +547,7 @@ async function main() {
       ADMIN_NAV_ITEMS.map((item) => [item.label, item.href]),
       [
         ["Operations", "/admin"],
+        ["Assessment grading", "/admin/grading"],
         ["Registration groups", "/admin/registrations"],
         ["Student progress", "/admin/progress"],
         ["Thesis reviews", "/admin/thesis"],
@@ -1779,6 +1781,21 @@ async function main() {
   check("instructor grading calculates the final score", () =>
     assert.equal(graded?.totalScore, 86)
   );
+  const forGrading = graded ? await db.getAssessmentSubmissionForGrading(graded.id) : null;
+  const latestPerCourse = await db.getLatestAssessmentSubmissions(student.id);
+  check("grading screen loads one paper with its student, and the hub reads every course's latest result at once", () => {
+    assert.equal(forGrading?.student.id, student.id);
+    assert.equal(forGrading?.status, "graded");
+    assert.equal(new Set(latestPerCourse.map((row) => row.courseSlug)).size, latestPerCourse.length);
+    assert.ok(latestPerCourse.some((row) => row.id === graded?.id));
+  });
+  const gradeActionSource = await fs.readFile(path.join(process.cwd(), "app/admin/actions.ts"), "utf8");
+  check("a stale tab or double click cannot overwrite a recorded grade", () => {
+    const action = gradeActionSource.slice(gradeActionSource.indexOf("export async function gradeAssessment"));
+    assert.ok(action.indexOf('submission.status !== "pending-review"') > -1);
+    assert.ok(action.indexOf('submission.status !== "pending-review"') < action.indexOf("await db.gradeAssessment"));
+    assert.ok(action.includes("writtenPoints: z.coerce.number().int().min(0).max(60)") || gradeActionSource.includes("writtenPoints: z.coerce.number().int().min(0).max(60)"));
+  });
 
   const communityPost = await db.createCommunityPost({
     moduleSlug: module.slug,

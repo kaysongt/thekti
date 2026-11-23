@@ -1,3 +1,5 @@
+import sourceCatalogs from "../content/program-catalogs.json";
+
 /**
  * One source for how KTI presents its programs: the homepage links, the
  * catalog cards, and each program page read from here so hours, availability,
@@ -72,10 +74,10 @@ export const PROGRAMS: readonly ProgramSummary[] = [
     imageAlt: "A small group discussing Scripture together",
     availability: "coming-soon",
     hoursLabel: "40–50 program hours",
-    priceLabel: "$250 once for all six tracks",
+    priceLabel: "$250 per certificate",
     audience: "Teenagers, ministry leaders, small group leaders, marketplace believers, and Christian creatives.",
     learn: "Six short Biblical Studies tracks, each shaped for the people it serves.",
-    next: "Read each track’s module list now. Enrollment opens when the tracks launch.",
+    next: "Choose a track and review its sessions and assessment requirements before enrolling.",
   },
   {
     key: "specialized",
@@ -88,8 +90,8 @@ export const PROGRAMS: readonly ProgramSummary[] = [
     hoursLabel: "20 program hours",
     priceLabel: "$50 per academy",
     audience: "Believers who want focused training in one area of Christian life.",
-    learn: "Sixteen academies, from prayer and faith to marriage, leadership, and church administration.",
-    next: "Browse the academies now. Each opens for enrollment when it launches.",
+    learn: "Academies in subjects ranging from prayer and faith to marriage, leadership, and church administration.",
+    next: "Choose an academy and review its curriculum. Classes are coming soon.",
   },
 ];
 
@@ -211,6 +213,14 @@ export const ACADEMIES: readonly string[] = [
   "Prosperity & Stewardship Academy",
   "Signs & Wonders Academy",
   "Church Administration Academy",
+  "Helps Ministry Academy",
+  "Media Ministry Academy",
+  "Pentecostal & Charismatic Revival Academy",
+  "Church History Academy",
+  "Christian Apologetics Academy",
+  "Worship Ministry Academy",
+  "Teen & Children Ministry Academy",
+  "Youth Ministry Academy",
 ];
 
 export const ACADEMY_HOURS = 20;
@@ -225,6 +235,9 @@ export const BELIEVERS_CLASSES = [
   { title: "Stewardship and Missional Lifestyle", videoId: "RLbRya09Mn8" },
 ] as const;
 
+export const BASIC_OFFERS = BASIC_CERTIFICATES.map((track) => ({
+  product: "basic-" + track.slug, title: "Biblical Studies for " + track.audience, amount: 250,
+}));
 export const BASIC_PASS = { product: "basic-certificates", title: "Basic Certificates · all six tracks", amount: 250 } as const;
 export const ACADEMY_OFFERS = ACADEMIES.map((title) => ({
   product: "academy-" + title.replace(/ Academy$/, "").toLowerCase().replace(/ & /g, "-and-").replace(/[^a-z0-9]+/g, "-"),
@@ -232,5 +245,16 @@ export const ACADEMY_OFFERS = ACADEMIES.map((title) => ({
 }));
 
 export function programOffer(product: unknown) {
-  return product === BASIC_PASS.product ? BASIC_PASS : ACADEMY_OFFERS.find((offer) => offer.product === product);
+  return product === BASIC_PASS.product ? BASIC_PASS : BASIC_OFFERS.find((offer) => offer.product === product) ?? ACADEMY_OFFERS.find((offer) => offer.product === product);
+}
+
+export function basicCatalog(slug: string) {
+  return sourceCatalogs.basic[slug as keyof typeof sourceCatalogs.basic];
+}
+export function academyCatalog(title: string) {
+  return sourceCatalogs.academy[title as keyof typeof sourceCatalogs.academy];
+}
+
+export function ownsBasicPass(records: { product: string; status: string; accessSuspendedAt?: string | null }[]) {
+  return records.some((r) => r.product === BASIC_PASS.product && r.status === "active" && !r.accessSuspendedAt);
 }

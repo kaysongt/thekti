@@ -1,6 +1,6 @@
 import { writeFile } from "node:fs/promises";
 import Stripe from "stripe";
-import { ACADEMY_OFFERS, BASIC_PASS } from "../lib/programs";
+import { ACADEMY_OFFERS, BASIC_OFFERS } from "../lib/programs";
 import { STRIPE_API_VERSION } from "../lib/payments/stripe-version";
 
 async function sync() {
@@ -19,7 +19,7 @@ async function sync() {
     return;
   }
   const prices: Record<string, string> = {};
-  for (const offer of [BASIC_PASS, ...ACADEMY_OFFERS]) {
+  for (const offer of [...BASIC_OFFERS, ...ACADEMY_OFFERS]) {
     const lookup = "kti_" + offer.product.replaceAll("-", "_") + "_usd";
     const productId = "kti_" + offer.product.replaceAll("-", "_");
     const amount = offer.amount * 100;
@@ -39,6 +39,9 @@ async function sync() {
     }
     prices[offer.product] = price.id;
   }
+  // Retire the original bundle after individual prices exist. Completed purchases keep their original terms.
+  const old = (await stripe.prices.list({ lookup_keys: ["kti_basic_certificates_usd"], active: true, limit: 1 })).data[0];
+  if (old?.product === "kti_basic_certificates") await stripe.prices.update(old.id, { active: false });
   await writeFile("lib/payments/program-prices.json", JSON.stringify({ account: account.id, prices }));
   console.info("Verified KingsWord live tuition for all " + Object.keys(prices).length + " offers.");
 }

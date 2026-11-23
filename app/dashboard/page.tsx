@@ -329,7 +329,7 @@ export default async function DashboardPage({
           {enrollment.accessSuspendedAt ? <p>Access is suspended. Contact KTI for help.</p> : enrollment.status === "active" ?
             <p>Your enrollment is active. Classes are coming soon.</p> : <>
               <p>One-time tuition · US${offer.amount}. Classes are coming soon.</p>
-              {paidProgramCheckoutReady() ? <form action={beginStripeCheckout}><input type="hidden" name="enrollmentId" value={enrollment.id} /><button className="btn primary">Pay US${offer.amount}</button></form> : <p>Checkout is coming soon.</p>}
+              {paidProgramCheckoutReady(offer.product) ? <form action={beginStripeCheckout}><input type="hidden" name="enrollmentId" value={enrollment.id} /><button className="btn primary">Pay US${offer.amount}</button></form> : offer.product === "basic-certificates" ? <Link href="/programs#basic-certificates">Choose an individual certificate</Link> : <p>Checkout is coming soon.</p>}
             </>}
         </section>)}
         {programs.map((item, index) => item.kind === "believers" ? (

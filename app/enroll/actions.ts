@@ -3,7 +3,7 @@
 import { redirect } from "next/navigation";
 import { z } from "zod";
 
-import { programOffer } from "@/lib/programs";
+import { BASIC_PASS, BASIC_OFFERS, ownsBasicPass, programOffer } from "@/lib/programs";
 import { paidProgramCheckoutReady } from "@/lib/payments/stripe-client";
 import { BELIEVERS } from "@/lib/program-membership";
 import type { NewEnrollmentForStudent } from "@/lib/db/types";
@@ -39,7 +39,8 @@ export async function registerStudent(
 ): Promise<FormState> {
   const free = formData.get("program") === BELIEVERS;
   const offer = programOffer(formData.get("program"));
-  if (offer && !paidProgramCheckoutReady()) return { error: "Payment enrollment is coming soon." };
+  if (offer?.product === BASIC_PASS.product) return { error: "Choose an individual Basic Certificate from the program catalog." };
+  if (offer && !paidProgramCheckoutReady(offer.product)) return { error: "Payment enrollment is coming soon." };
   const session = await currentStudent();
   if (!free && !offer) {
     const deadline = await getRegistrationDeadline();
@@ -104,6 +105,9 @@ export async function registerStudent(
     if (session) {
       studentId = session.id;
       const records = await db.getEnrollmentsForStudent(studentId);
+      if (offer && BASIC_OFFERS.some((item) => item.product === offer.product) && ownsBasicPass(records)) {
+        return { error: "Your existing Basic Certificates pass already covers this track. Open My studies." };
+      }
       const existing = records.find((e) => (e.product === enrollment.product || (!free && !offer && e.product === "advanced")) && (e.status === "active" || e.status === "pending"));
       if (!existing) await db.joinProgram({ ...enrollment, studentId });
       else if (existing.accessSuspendedAt) return { error: "Please contact KTI about your suspended access." };

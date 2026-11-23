@@ -8,7 +8,7 @@ import { db } from "@/lib/db";
 import { currentStudent } from "@/lib/auth";
 import { getModuleStatuses } from "@/lib/content";
 import { formatModuleReleaseDate, getCurriculum } from "@/lib/curriculum";
-import { programOffer } from "@/lib/programs";
+import { BASIC_PASS, BASIC_OFFERS, ownsBasicPass, programOffer, basicCatalog, academyCatalog } from "@/lib/programs";
 import { isStripeCheckoutConfigured, paidProgramCheckoutReady } from "@/lib/payments/stripe-client";
 
 import EnrollForm from "./EnrollForm";
@@ -23,12 +23,17 @@ export default async function EnrollPage({
   const student = await currentStudent();
   const { program: selected, plan, scholarship } = await searchParams;
   const offer = programOffer(selected);
+  if (selected === BASIC_PASS.product) redirect("/programs#basic-certificates");
   if (offer) {
     const records = student ? await db.getEnrollmentsForStudent(student.id) : [];
+    const basic = BASIC_OFFERS.some((item) => item.product === offer.product);
+    if (basic && ownsBasicPass(records)) redirect("/dashboard#program-" + BASIC_PASS.product);
+    const detail = basic ? basicCatalog(offer.product.slice(6)) : academyCatalog(offer.title);
     if (records.some((entry) => entry.product === offer.product && (entry.status === "active" || entry.status === "pending"))) redirect("/dashboard#program-" + offer.product);
     return <main className="shell"><section className="authwrap"><div className="authcard">
-      <h1>{offer.title}</h1><p>One payment of US${offer.amount} covers {offer.product === "basic-certificates" ? "all six Basic Certificate tracks" : "this academy"}. Classes are coming soon. Your purchase gives you access as they open.</p>
-      {paidProgramCheckoutReady() ? <EnrollForm offerProduct={offer.product} signedIn={Boolean(student)} initialPlan="certificate" modules={[]} scholarshipIntent={false} returnPath={"/enroll?program=" + offer.product} /> : <p>Payment enrollment is coming soon.</p>}
+      <h1>{offer.title}</h1><p>One payment of US${offer.amount} covers {basic ? "this Basic Certificate track" : "this academy"}. Classes are coming soon. Your purchase gives you access as they open.</p>
+      {detail && <p><Link href={"https://drive.google.com/file/d/" + detail.catalog + "/view"}>Read the course catalog</Link>{offer.product === "basic-teenagers" && " · Current tuition is US$250. The PDF lists an earlier fee."}</p>}
+      {paidProgramCheckoutReady(offer.product) ? <EnrollForm offerProduct={offer.product} signedIn={Boolean(student)} initialPlan="certificate" modules={[]} scholarshipIntent={false} returnPath={"/enroll?program=" + offer.product} /> : <p>Payment enrollment is coming soon.</p>}
     </div></section></main>;
   }
   if (selected === BELIEVERS) {

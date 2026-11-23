@@ -451,6 +451,7 @@ export default async function AdvancedCertificatePage() {
               View tuition details <span aria-hidden="true">&rarr;</span>
             </Link>
           </div>
+          <p><a href="https://drive.google.com/file/d/1Yrnrv8giS8hsRffReOmCZNJFKVVcNYy4/view">Full course catalog</a> · <a href="https://drive.google.com/file/d/1-cq9MM3iocHAR7mn3EoOm46kSLnmzDtZ/view">Program brochure</a></p>
           <div className="faq">
             <details>
               <summary>Who is this program for?</summary>

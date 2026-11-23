@@ -117,6 +117,6 @@ export function getStripeClient(): Stripe {
   return stripeClient;
 }
 
-export function paidProgramCheckoutReady() {
-  return Boolean(programPrices.account && Object.keys(programPrices.prices).length === 17) && isStripeCheckoutConfigured();
+export function paidProgramCheckoutReady(product: string) {
+  return Boolean(programPrices.account && Object.hasOwn(programPrices.prices, product)) && isStripeCheckoutConfigured();
 }

@@ -5,7 +5,7 @@ import { z } from "zod";
 
 import { currentStudent, hashPassword, verifyPassword } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { programOffer } from "@/lib/programs";
+import { BASIC_PASS, BASIC_OFFERS, ownsBasicPass, programOffer } from "@/lib/programs";
 import { hasMinisterWaiver } from "@/lib/access";
 import { createCheckoutForEnrollment } from "@/lib/payments/create-checkout";
 import { PromotionCodeError } from "@/lib/payments/promotion-code";
@@ -41,6 +41,7 @@ export async function beginStripeCheckout(formData: FormData): Promise<void> {
   }
 
   if (!programOffer(enrollment.product) && hasMinisterWaiver(enrollments)) redirect("/dashboard");
+  if (enrollment.product === BASIC_PASS.product || (ownsBasicPass(enrollments) && BASIC_OFFERS.some((offer) => offer.product === enrollment.product))) redirect("/programs#basic-certificates");
   let destination: string;
   try {
     const result = await createCheckoutForEnrollment({

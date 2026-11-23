@@ -1,0 +1,1044 @@
+{
+  "basic": {
+    "teenagers": {
+      "courses": [
+        {
+          "code": "BST 101",
+          "title": "Who Is God?",
+          "module": 1
+        },
+        {
+          "code": "BST 102",
+          "title": "Why Jesus Matters",
+          "module": 1
+        },
+        {
+          "code": "BST 103",
+          "title": "Grace & My New Identity",
+          "module": 1
+        },
+        {
+          "code": "BST 104",
+          "title": "The Spirit, the Church & Our Hope",
+          "module": 1
+        },
+        {
+          "code": "BST 201",
+          "title": "One Bible, One Big Story",
+          "module": 2
+        },
+        {
+          "code": "BST 202",
+          "title": "Read It in Context",
+          "module": 2
+        },
+        {
+          "code": "BST 203",
+          "title": "Truth Beyond the Caption",
+          "module": 2
+        },
+        {
+          "code": "BST 301",
+          "title": "Creation, Covenant & Rescue",
+          "module": 3
+        },
+        {
+          "code": "BST 302",
+          "title": "Kingdom, Wisdom & Worship",
+          "module": 3
+        },
+        {
+          "code": "BST 303",
+          "title": "Prophets, Promise & Hope",
+          "module": 3
+        },
+        {
+          "code": "BST 401",
+          "title": "Meet Jesus in the Gospels",
+          "module": 4
+        },
+        {
+          "code": "BST 402",
+          "title": "Acts & the Gospel on the Move",
+          "module": 4
+        },
+        {
+          "code": "BST 403",
+          "title": "Letters for Growing Believers",
+          "module": 4
+        },
+        {
+          "code": "BST 404",
+          "title": "Revelation & Confident Hope",
+          "module": 4
+        },
+        {
+          "code": "BST 501",
+          "title": "Identity, Truth & a Renewed Mind",
+          "module": 5
+        },
+        {
+          "code": "BST 502",
+          "title": "Prayer, Relationship & Rest",
+          "module": 5
+        },
+        {
+          "code": "BST 503",
+          "title": "Led & Empowered by the Spirit",
+          "module": 5
+        },
+        {
+          "code": "BST 504",
+          "title": "Faith, Character & Relationships",
+          "module": 5
+        },
+        {
+          "code": "BST 505",
+          "title": "Purpose, Gifts & Everyday Mission",
+          "module": 5
+        },
+        {
+          "code": "BST 506",
+          "title": "Put It into Practice",
+          "module": 5
+        }
+      ],
+      "assessment": [
+        "Bible understanding & doctrine checks 25%",
+        "Passage study & interpretation tasks 25%",
+        "Practical reflections & decision cases 20%",
+        "Final project & individual explanation 30%"
+      ],
+      "requirements": "At least 90% attendance, all assessed work turned in, an overall score of 70% or higher, and your final team project and individual explanation.",
+      "catalog": "18U1a71L1pW_DVSssy3LKxkfA8P7C-Ceb",
+      "brochure": "1YLEhvAbphpiWxC99-uXZ5upTr2I4XVU1"
+    },
+    "marketplace": {
+      "courses": [
+        {
+          "code": "BSM 101",
+          "title": "God & the Authority of Scripture",
+          "module": 1
+        },
+        {
+          "code": "BSM 102",
+          "title": "Jesus Christ & His Finished Work",
+          "module": 1
+        },
+        {
+          "code": "BSM 103",
+          "title": "Salvation & the New Creation",
+          "module": 1
+        },
+        {
+          "code": "BSM 104",
+          "title": "The Holy Spirit, the Church & Our Blessed Hope",
+          "module": 1
+        },
+        {
+          "code": "BSM 201",
+          "title": "Reading Scripture in Context",
+          "module": 2
+        },
+        {
+          "code": "BSM 202",
+          "title": "Practical Bible Study Methods & Tools",
+          "module": 2
+        },
+        {
+          "code": "BSM 203",
+          "title": "Christ-Centered Reading of Scripture",
+          "module": 2
+        },
+        {
+          "code": "BSM 204",
+          "title": "Common Errors in Interpretation",
+          "module": 2
+        },
+        {
+          "code": "BSM 205",
+          "title": "From Biblical Text to Daily Life",
+          "module": 2
+        },
+        {
+          "code": "BSM 301",
+          "title": "Creation, Covenant & Calling",
+          "module": 3
+        },
+        {
+          "code": "BSM 302",
+          "title": "Wisdom Literature & the Working Life",
+          "module": 3
+        },
+        {
+          "code": "BSM 303",
+          "title": "The Prophets, Justice & Integrity",
+          "module": 3
+        },
+        {
+          "code": "BSM 401",
+          "title": "Jesus in the Gospels",
+          "module": 4
+        },
+        {
+          "code": "BSM 402",
+          "title": "Acts & Mission Beyond the Church Walls",
+          "module": 4
+        },
+        {
+          "code": "BSM 403",
+          "title": "Paul's Letters & the Christian at Work",
+          "module": 4
+        },
+        {
+          "code": "BSM 404",
+          "title": "General Epistles & Revelation",
+          "module": 4
+        },
+        {
+          "code": "BSM 501",
+          "title": "A Biblical Theology of Work",
+          "module": 5
+        },
+        {
+          "code": "BSM 502",
+          "title": "Called to the Marketplace",
+          "module": 5
+        },
+        {
+          "code": "BSM 503",
+          "title": "Stewardship, Money & Generosity",
+          "module": 5
+        },
+        {
+          "code": "BSM 504",
+          "title": "Ethics & Integrity in Business",
+          "module": 5
+        },
+        {
+          "code": "BSM 505",
+          "title": "Witness in the Workplace",
+          "module": 5
+        },
+        {
+          "code": "BSM 601",
+          "title": "The Believer's Inner Life",
+          "module": 6
+        },
+        {
+          "code": "BSM 602",
+          "title": "Character & Servant Leadership at Work",
+          "module": 6
+        },
+        {
+          "code": "BSM 603",
+          "title": "Kingdom Influence in Your Sphere",
+          "module": 6
+        },
+        {
+          "code": "BSM 604",
+          "title": "Capstone: Personal Marketplace Ministry Plan",
+          "module": 6
+        }
+      ],
+      "assessment": [
+        "Essential doctrine assessment 20%",
+        "Bible study worksheet 20%",
+        "Faith-at-work case study 20%",
+        "Personal stewardship plan 15%",
+        "Capstone presentation 25%"
+      ],
+      "requirements": "At least 90% attendance, submission of all assessed work, an overall score of 70% or higher, and a satisfactory capstone presentation of a personal marketplace ministry plan.",
+      "catalog": "13_STbuDKNvYyZULYY2SGRMJuga6haeCQ",
+      "brochure": "1ELDyl1Kcw1XFzT6mjAEBDiZhQSQrLxZz"
+    },
+    "creatives": {
+      "courses": [
+        {
+          "code": "BSC 101",
+          "title": "God & the Authority of Scripture",
+          "module": 1
+        },
+        {
+          "code": "BSC 102",
+          "title": "Jesus Christ & His Finished Work",
+          "module": 1
+        },
+        {
+          "code": "BSC 103",
+          "title": "Salvation & the New Creation",
+          "module": 1
+        },
+        {
+          "code": "BSC 104",
+          "title": "The Holy Spirit, the Church & Our Blessed Hope",
+          "module": 1
+        },
+        {
+          "code": "BSC 201",
+          "title": "Reading Scripture in Context",
+          "module": 2
+        },
+        {
+          "code": "BSC 202",
+          "title": "Practical Bible Study Methods & Tools",
+          "module": 2
+        },
+        {
+          "code": "BSC 203",
+          "title": "Christ-Centered Reading of Scripture",
+          "module": 2
+        },
+        {
+          "code": "BSC 204",
+          "title": "Common Errors in Interpretation",
+          "module": 2
+        },
+        {
+          "code": "BSC 205",
+          "title": "From Biblical Text to Creative Work",
+          "module": 2
+        },
+        {
+          "code": "BSC 301",
+          "title": "Creation, Covenant & the Craftsman",
+          "module": 3
+        },
+        {
+          "code": "BSC 302",
+          "title": "Psalms, Poetry & Wisdom",
+          "module": 3
+        },
+        {
+          "code": "BSC 303",
+          "title": "The Prophets & Creative Communication",
+          "module": 3
+        },
+        {
+          "code": "BSC 401",
+          "title": "Jesus the Storyteller",
+          "module": 4
+        },
+        {
+          "code": "BSC 402",
+          "title": "Acts & the Gospel in the Culture",
+          "module": 4
+        },
+        {
+          "code": "BSC 403",
+          "title": "Paul's Letters & the Creative Life",
+          "module": 4
+        },
+        {
+          "code": "BSC 404",
+          "title": "General Epistles & Revelation",
+          "module": 4
+        },
+        {
+          "code": "BSC 501",
+          "title": "A Biblical Theology of Creativity",
+          "module": 5
+        },
+        {
+          "code": "BSC 502",
+          "title": "Called & Gifted to Create",
+          "module": 5
+        },
+        {
+          "code": "BSC 503",
+          "title": "Excellence, Discipline & Craft",
+          "module": 5
+        },
+        {
+          "code": "BSC 504",
+          "title": "Worship, the Arts & the Local Church",
+          "module": 5
+        },
+        {
+          "code": "BSC 505",
+          "title": "Engaging Culture & Media",
+          "module": 5
+        },
+        {
+          "code": "BSC 601",
+          "title": "The Creative's Inner Life",
+          "module": 6
+        },
+        {
+          "code": "BSC 602",
+          "title": "Character, Ethics & Platform",
+          "module": 6
+        },
+        {
+          "code": "BSC 603",
+          "title": "Collaboration, Business & Stewardship",
+          "module": 6
+        },
+        {
+          "code": "BSC 604",
+          "title": "Capstone: Creative Portfolio Presentation",
+          "module": 6
+        }
+      ],
+      "assessment": [
+        "Essential doctrine assessment 20%",
+        "Bible study worksheet 20%",
+        "Scripture-to-creative brief 20%",
+        "Personal creative ministry plan 15%",
+        "Capstone portfolio presentation 25%"
+      ],
+      "requirements": "At least 90% attendance, submission of all assessed work, an overall score of 70% or higher, and a satisfactory capstone presentation of an original, Scripture-based creative work.",
+      "catalog": "1cdS6essIeQoTbtMTqXOr41n-MB1nPkjx",
+      "brochure": "1ZQF59QqDuPce9YP4aeANrzNtFiRKQGYQ"
+    },
+    "ministry-leaders": {
+      "courses": [
+        {
+          "code": "PTM 101",
+          "title": "God & the Authority of Scripture",
+          "module": 1
+        },
+        {
+          "code": "PTM 102",
+          "title": "Jesus Christ & His Finished Work",
+          "module": 1
+        },
+        {
+          "code": "PTM 103",
+          "title": "Salvation & the New Creation",
+          "module": 1
+        },
+        {
+          "code": "PTM 104",
+          "title": "The Holy Spirit, the Church & Our Blessed Hope",
+          "module": 1
+        },
+        {
+          "code": "PTM 201",
+          "title": "Reading Scripture in Context",
+          "module": 2
+        },
+        {
+          "code": "PTM 202",
+          "title": "Practical Exegesis & Study Tools",
+          "module": 2
+        },
+        {
+          "code": "PTM 203",
+          "title": "Christ-Centered Interpretation",
+          "module": 2
+        },
+        {
+          "code": "PTM 204",
+          "title": "Common Errors in Interpretation",
+          "module": 2
+        },
+        {
+          "code": "PTM 205",
+          "title": "From Biblical Text to Sermon or Lesson",
+          "module": 2
+        },
+        {
+          "code": "PTM 301",
+          "title": "The Pentateuch & Historical Books",
+          "module": 3
+        },
+        {
+          "code": "PTM 302",
+          "title": "Wisdom, Poetry & Worship",
+          "module": 3
+        },
+        {
+          "code": "PTM 303",
+          "title": "The Prophets & the Promise of Redemption",
+          "module": 3
+        },
+        {
+          "code": "PTM 401",
+          "title": "Teaching Jesus from the Gospels",
+          "module": 4
+        },
+        {
+          "code": "PTM 402",
+          "title": "Acts & Spirit-Empowered Mission",
+          "module": 4
+        },
+        {
+          "code": "PTM 403",
+          "title": "Pauline & Pastoral Epistles",
+          "module": 4
+        },
+        {
+          "code": "PTM 404",
+          "title": "General Epistles & Revelation",
+          "module": 4
+        },
+        {
+          "code": "PTM 501",
+          "title": "Every Part Matters",
+          "module": 5
+        },
+        {
+          "code": "PTM 502",
+          "title": "Called & Equipped",
+          "module": 5
+        },
+        {
+          "code": "PTM 503",
+          "title": "Purpose & Ministry",
+          "module": 5
+        },
+        {
+          "code": "PTM 504",
+          "title": "Running with a Vision",
+          "module": 5
+        },
+        {
+          "code": "PTM 505",
+          "title": "Leading Well",
+          "module": 5
+        },
+        {
+          "code": "PTM 601",
+          "title": "The Leader's Inner Life",
+          "module": 6
+        },
+        {
+          "code": "PTM 602",
+          "title": "Character, Ethics & Pastoral Leadership",
+          "module": 6
+        },
+        {
+          "code": "PTM 603",
+          "title": "Communication & Public Ministry",
+          "module": 6
+        },
+        {
+          "code": "PTM 604",
+          "title": "Assessed Teaching Practicum",
+          "module": 6
+        }
+      ],
+      "assessment": [
+        "Essential doctrine assessment 20%",
+        "Biblical interpretation worksheet 20%",
+        "Written sermon or teaching outline 20%",
+        "Four-message teaching series plan 15%",
+        "Final teaching practicum 25%"
+      ],
+      "requirements": "At least 90% attendance, submission of all assessed work, an overall score of 70% or higher, and a satisfactory teaching or preaching practicum.",
+      "catalog": "1O9hN4ulFE7vHwqTUw8eUF9JSbAhokxsK",
+      "brochure": "1UZbN05JWDQvne_z8kBukkq0m8PIN1_l2"
+    },
+    "fivefold": {
+      "courses": [
+        {
+          "code": "APE 101",
+          "title": "God, Revelation & the Authority of Scripture",
+          "module": 1
+        },
+        {
+          "code": "APE 102",
+          "title": "Jesus Christ & His Finished Work",
+          "module": 1
+        },
+        {
+          "code": "APE 103",
+          "title": "Salvation & the New Creation",
+          "module": 1
+        },
+        {
+          "code": "APE 104",
+          "title": "The Holy Spirit, the Church & Our Blessed Hope",
+          "module": 1
+        },
+        {
+          "code": "APE 201",
+          "title": "Reading Scripture in Context",
+          "module": 2
+        },
+        {
+          "code": "APE 202",
+          "title": "Practical Exegesis & Study Tools",
+          "module": 2
+        },
+        {
+          "code": "APE 203",
+          "title": "Christ-Centered Interpretation",
+          "module": 2
+        },
+        {
+          "code": "APE 204",
+          "title": "Testing Revelation & Avoiding Error",
+          "module": 2
+        },
+        {
+          "code": "APE 205",
+          "title": "From Biblical Text to Message",
+          "module": 2
+        },
+        {
+          "code": "APE 301",
+          "title": "Founders & Covenant Builders",
+          "module": 3
+        },
+        {
+          "code": "APE 302",
+          "title": "The Prophets of Israel",
+          "module": 3
+        },
+        {
+          "code": "APE 303",
+          "title": "Heralds of Good News",
+          "module": 3
+        },
+        {
+          "code": "APE 401",
+          "title": "Jesus, the Perfect Pattern",
+          "module": 4
+        },
+        {
+          "code": "APE 402",
+          "title": "The Apostle: Signs, Wonders & Mighty Deeds",
+          "module": 4
+        },
+        {
+          "code": "APE 403",
+          "title": "The Prophet: Revelation & Utterance",
+          "module": 4
+        },
+        {
+          "code": "APE 404",
+          "title": "The Evangelist: Healings & Miracles",
+          "module": 4
+        },
+        {
+          "code": "APE 501",
+          "title": "Equipping the Saints",
+          "module": 5
+        },
+        {
+          "code": "APE 502",
+          "title": "Called, Commissioned & Sent",
+          "module": 5
+        },
+        {
+          "code": "APE 503",
+          "title": "Church Planting & Apostolic Strategy",
+          "module": 5
+        },
+        {
+          "code": "APE 504",
+          "title": "Prophetic Ministry with Order",
+          "module": 5
+        },
+        {
+          "code": "APE 505",
+          "title": "Evangelism, Outreach & Follow-Up",
+          "module": 5
+        },
+        {
+          "code": "APE 601",
+          "title": "The Inner Life of the Sent One",
+          "module": 6
+        },
+        {
+          "code": "APE 602",
+          "title": "Character, Ethics & Spiritual Authority",
+          "module": 6
+        },
+        {
+          "code": "APE 603",
+          "title": "Public Ministry & the Supernatural",
+          "module": 6
+        },
+        {
+          "code": "APE 604",
+          "title": "Assessed Ministry Practicum",
+          "module": 6
+        }
+      ],
+      "assessment": [
+        "Essential doctrine assessment 20%",
+        "Interpretation & discernment worksheet 20%",
+        "Written message outline 20%",
+        "Ministry or mission strategy plan 15%",
+        "Final ministry practicum 25%"
+      ],
+      "requirements": "At least 90% attendance, submission of all assessed work, an overall score of 70% or higher, and a satisfactory ministry practicum.",
+      "catalog": "1QARwr0rik-mQkqhldLCoV2gG9XrYShBL",
+      "brochure": "1KvfEeWmVV6Sphe_PIrL-rujs1TzJMh_X"
+    },
+    "small-group-leaders": {
+      "courses": [
+        {
+          "code": "BSL 101",
+          "title": "God & the Authority of Scripture",
+          "module": 1
+        },
+        {
+          "code": "BSL 102",
+          "title": "Jesus Christ & His Finished Work",
+          "module": 1
+        },
+        {
+          "code": "BSL 103",
+          "title": "Salvation & the New Creation",
+          "module": 1
+        },
+        {
+          "code": "BSL 104",
+          "title": "The Holy Spirit, the Church & Our Blessed Hope",
+          "module": 1
+        },
+        {
+          "code": "BSL 201",
+          "title": "Reading Scripture in Context",
+          "module": 2
+        },
+        {
+          "code": "BSL 202",
+          "title": "Practical Bible Study Methods & Tools",
+          "module": 2
+        },
+        {
+          "code": "BSL 203",
+          "title": "Christ-Centered Interpretation",
+          "module": 2
+        },
+        {
+          "code": "BSL 204",
+          "title": "Common Errors in Interpretation",
+          "module": 2
+        },
+        {
+          "code": "BSL 205",
+          "title": "From Biblical Text to Group Study",
+          "module": 2
+        },
+        {
+          "code": "BSL 301",
+          "title": "The Pentateuch & Historical Books",
+          "module": 3
+        },
+        {
+          "code": "BSL 302",
+          "title": "Wisdom, Poetry & Worship",
+          "module": 3
+        },
+        {
+          "code": "BSL 303",
+          "title": "The Prophets & the Promise of Redemption",
+          "module": 3
+        },
+        {
+          "code": "BSL 401",
+          "title": "Teaching Jesus from the Gospels",
+          "module": 4
+        },
+        {
+          "code": "BSL 402",
+          "title": "Acts & the Early Church",
+          "module": 4
+        },
+        {
+          "code": "BSL 403",
+          "title": "Pauline & Pastoral Epistles",
+          "module": 4
+        },
+        {
+          "code": "BSL 404",
+          "title": "General Epistles & Revelation",
+          "module": 4
+        },
+        {
+          "code": "BSL 501",
+          "title": "Every Part Matters",
+          "module": 5
+        },
+        {
+          "code": "BSL 502",
+          "title": "Called & Equipped to Serve",
+          "module": 5
+        },
+        {
+          "code": "BSL 503",
+          "title": "Leading Healthy Small Groups",
+          "module": 5
+        },
+        {
+          "code": "BSL 504",
+          "title": "Shepherding & Care",
+          "module": 5
+        },
+        {
+          "code": "BSL 505",
+          "title": "Serving with Excellence",
+          "module": 5
+        },
+        {
+          "code": "BSL 601",
+          "title": "The Leader's Inner Life",
+          "module": 6
+        },
+        {
+          "code": "BSL 602",
+          "title": "Character, Ethics & Servant Leadership",
+          "module": 6
+        },
+        {
+          "code": "BSL 603",
+          "title": "Communication & Facilitation",
+          "module": 6
+        },
+        {
+          "code": "BSL 604",
+          "title": "Assessed Leading Practicum",
+          "module": 6
+        }
+      ],
+      "assessment": [
+        "Essential doctrine assessment 20%",
+        "Biblical interpretation worksheet 20%",
+        "Small group study guide 20%",
+        "Four-week study series plan 15%",
+        "Final leading practicum 25%"
+      ],
+      "requirements": "At least 90% attendance, submission of all assessed work, an overall score of 70% or higher, and a satisfactory small group leading practicum.",
+      "catalog": "19iMFQO2tWfIqi4umhkDa2zCIRccOrjym",
+      "brochure": "1gDEB6rzZPS20EhIiWYgQGxazCqPrmI3m"
+    }
+  },
+  "academy": {
+    "Helps Ministry Academy": {
+      "catalog": "1Egsy_3MXKoMnIPqXYZdWbdiTP-8VhOwN",
+      "courses": [
+        "Biblical foundations of helps ministry",
+        "The heart & character of a servant",
+        "Hospitality, ushering & guest experience",
+        "Safety, protocol & care services",
+        "Leading & building helps teams"
+      ]
+    },
+    "Media Ministry Academy": {
+      "catalog": "1g-xkiBeC7dNVIpG9tGYHScs9EvlRs4xt",
+      "courses": [
+        "Biblical foundations of media ministry",
+        "Audio, visual & worship technology",
+        "Content creation & storytelling",
+        "Livestreaming, digital & social media",
+        "Media leadership & strategy"
+      ]
+    },
+    "Pentecostal & Charismatic Revival Academy": {
+      "catalog": "1CBic7Fjdh_-CVeTSV_q20B80LFG5ZFCs",
+      "courses": [
+        "Roots of Pentecost: from acts to Topeka",
+        "The Azusa street revival (1906-1909)",
+        "The healing revival (1947-1958)",
+        "The charismatic renewal",
+        "Global Pentecostalism & revival today"
+      ]
+    },
+    "Church Administration Academy": {
+      "catalog": "1tJ86JMf50eUQ1YqZzaEpKuw93YVl3ykE",
+      "courses": [
+        "Biblical foundations of church administration",
+        "Church governance, policy & compliance",
+        "Financial stewardship & accountability",
+        "People, volunteers & communication",
+        "Operations, technology & planning"
+      ]
+    },
+    "Dating & Relationship Academy": {
+      "catalog": "1tcKd3u4Rj5mbiGV1w8Uy5g2VE0v3zlWf",
+      "courses": [
+        "Biblical foundations of relationships",
+        "Self-awareness & emotional maturity",
+        "Communication & relationship skills",
+        "Discernment in dating",
+        "Preparing for healthy commitment"
+      ]
+    },
+    "Church History Academy": {
+      "catalog": "1c78_VhZSzUYKicBJteLJt-b50Vyl82HN",
+      "courses": [
+        "The early church: from Pentecost to Constantine",
+        "Councils, creeds & the church fathers",
+        "The medieval church",
+        "The Reformation era",
+        "Revival, missions & the global church"
+      ]
+    },
+    "Christian Apologetics Academy": {
+      "catalog": "1PA8vFHqsGp55IIzaQaAZwkxF6EjX1oAb",
+      "courses": [
+        "Foundations of apologetics",
+        "The existence of God",
+        "The reliability of the Bible",
+        "Jesus Christ and the resurrection",
+        "Worldviews, culture & engagement"
+      ]
+    },
+    "Worship Ministry Academy": {
+      "catalog": "1zt39W0yZRU2POLrDhb0IFMI6TuvU1VjY",
+      "courses": [
+        "Biblical foundations of worship",
+        "The heart & character of the worship leader",
+        "Musicianship & vocal development",
+        "Leading congregational worship",
+        "Building & sustaining a worship ministry"
+      ]
+    },
+    "Teen & Children Ministry Academy": {
+      "catalog": "1QaUPcdhjxil-Q2gxN3yLNQXillc64bpZ",
+      "courses": [
+        "Biblical foundations of children's & youth ministry",
+        "Understanding children & teenagers",
+        "Teaching & discipleship skills",
+        "Safe, healthy & caring ministry",
+        "Leading & sustaining ministry"
+      ]
+    },
+    "Youth Ministry Academy": {
+      "catalog": "14dpf-S-D23_hOj8sp8HcQOo2XVRB3LSg",
+      "courses": [
+        "Biblical foundations of youth ministry",
+        "Understanding youth & culture",
+        "Discipleship, teaching & mentoring",
+        "Caring for young people",
+        "Leadership, outreach & multiplication"
+      ]
+    },
+    "Mission & Evangelism Academy": {
+      "catalog": "1AttbuWvDVixr2m_ksXfWxfeYKuh0jXDd",
+      "courses": [
+        "Biblical foundations of missions",
+        "The heart & practice of evangelism",
+        "The Holy Spirit & gospel witness",
+        "Cross-cultural missions & discipleship",
+        "Mobilizing for lasting kingdom impact"
+      ]
+    },
+    "Signs & Wonders Academy": {
+      "catalog": "15Zn698yk04w5HVUfM9W9OMBxePjJVYFu",
+      "courses": [
+        "Biblical foundations of signs & wonders",
+        "The Holy Spirit & supernatural ministry",
+        "Healing, miracles & deliverance",
+        "Prayer, faith & spiritual authority",
+        "Activating a supernatural lifestyle"
+      ]
+    },
+    "Health & Healing Academy": {
+      "catalog": "19wuHJ5iGNLsPzKZYEyCKDKtXapwkF6Lt",
+      "courses": [
+        "Biblical foundations of health & healing",
+        "Faith, prayer & healing ministry",
+        "Healthy living & body stewardship",
+        "Emotional health & whole-person care",
+        "Living & serving in wholeness"
+      ]
+    },
+    "Power & Authority Academy": {
+      "catalog": "1f4YAXDqjg84TPYmswFQkHi4vw1Kv6F1N",
+      "courses": [
+        "Foundations of spiritual authority",
+        "The name of Jesus & the word of God",
+        "Power of the Holy Spirit",
+        "Prayer, faith & spiritual warfare",
+        "Walking in power & authority"
+      ]
+    },
+    "End-Time Events Academy": {
+      "catalog": "19iSAE4BdGmRQh9ZGdIXYNOHjUM72CDDC",
+      "courses": [
+        "Foundations of biblical eschatology",
+        "The return of Jesus Christ",
+        "Tribulation & prophetic events",
+        "The millennium & final judgment",
+        "New creation & living in hope"
+      ]
+    },
+    "School of the Spirit Academy": {
+      "catalog": "1Ne4_hgR7e4L4GfhWG6OrquYiHN8GT3ma",
+      "courses": [
+        "The person & work of the Holy Spirit",
+        "The Holy Spirit & the believer",
+        "Baptism in the Holy Spirit & prayer",
+        "The gifts & manifestations of the spirit",
+        "Spirit-led living & ministry"
+      ]
+    },
+    "Parenting Academy": {
+      "catalog": "1MDKBZsvPOMKVO-TiXZwmfB_9e8QuuMrM",
+      "courses": [
+        "Biblical foundations of parenting",
+        "Understanding child development",
+        "Communication & healthy discipline",
+        "Faith, character & family culture",
+        "Parenting with purpose & resilience"
+      ]
+    },
+    "Marriage Academy": {
+      "catalog": "1mgQvrVlZTXybjIMVP1SbXhEeT1gQAI_t",
+      "courses": [
+        "God's design for marriage",
+        "Communication & emotional connection",
+        "Character, grace & spiritual unity",
+        "Stewardship & family life",
+        "Building a lasting marriage"
+      ]
+    },
+    "Leadership Academy": {
+      "catalog": "1IKyG5ythmifWz4KstdrF25lqip4p-Rh-",
+      "courses": [
+        "Foundations of Christian leadership",
+        "Personal leadership & development",
+        "Vision & strategic leadership",
+        "Team building & people development",
+        "Leading well & finishing strong"
+      ]
+    },
+    "Purpose Academy": {
+      "catalog": "1UC-GTmDyAmDLCkhcNRTbNSlXnt89kUqg",
+      "courses": [
+        "Discovering God's purpose",
+        "Discerning your calling",
+        "Purpose & personal development",
+        "Running with a vision",
+        "Living a purpose-driven life"
+      ]
+    },
+    "Prayer Academy": {
+      "catalog": "19yuWCqK9RZ5x22kXIvb2nTVOYa_dJT2P",
+      "courses": [
+        "The foundations of New Covenant prayer",
+        "The principles of effective prayer",
+        "The different kinds of prayer",
+        "Spirit-led prayer & spiritual authority",
+        "Developing a powerful prayer life"
+      ]
+    },
+    "Faith Academy": {
+      "catalog": "1XTPRGhxwDkc2fov-IjMn7yVAk6vOmJR5",
+      "courses": [
+        "The foundations of Bible faith",
+        "How faith works",
+        "Growing and developing strong faith",
+        "Faith, prayer & spiritual authority",
+        "Living a lifestyle of faith"
+      ]
+    },
+    "Grace Academy": {
+      "catalog": "1Bu4TQhZLTdEmNmH_PA-wOHwfgDya2Qk1",
+      "courses": [
+        "The gospel of grace",
+        "The New Covenant advantage",
+        "Righteousness & identity in Christ",
+        "The transforming power of grace",
+        "Reigning in life through grace"
+      ]
+    }
+  }
+}

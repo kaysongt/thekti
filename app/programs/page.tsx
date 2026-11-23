@@ -2,7 +2,7 @@ import Link from "next/link";
 
 import Icon from "@/components/Icon";
 import ProgramCatalog from "@/components/ProgramCatalog";
-import { ACADEMY_OFFERS, ACADEMY_HOURS, BASIC_CERTIFICATES, PROGRAMS } from "@/lib/programs";
+import { basicCatalog, academyCatalog, ACADEMY_OFFERS, ACADEMY_HOURS, BASIC_CERTIFICATES, PROGRAMS } from "@/lib/programs";
 
 export const metadata = {
   title: "Programs",
@@ -34,11 +34,10 @@ export default function ProgramsPage() {
           <div className="section-head">
             <div>
               <h2 id="basic-certificates">Basic Certificate tracks</h2>
-              <p>Six short Biblical Studies certificates, each written for the people it serves. One payment of US$250 covers all six tracks as they launch.</p>
+              <p>Six short Biblical Studies certificates, each written for the people it serves. Each track costs US$250. Choose the certificate that matches your calling.</p>
             </div>
             <span className="badge soon">Coming soon</span>
           </div>
-          <p><Link href="/enroll?program=basic-certificates">View the $250 all-track pass</Link></p>
           <ul className="k-grid track-grid">
             {BASIC_CERTIFICATES.map((track) => (
               <li key={track.slug}>
@@ -55,14 +54,21 @@ export default function ProgramsPage() {
                         <Icon name="chevron-right" className="disclosure-icon" />
                       </summary>
                       <ol>
-                        {track.modules.map((module) => (
+                        {track.modules.map((module, index) => (
                           <li key={module.title}>
                             <span>{module.title}</span>
                             <span className="num">{module.hours} program hours</span>
+                            <ul>{basicCatalog(track.slug).courses.filter((course) => course.module === index + 1).map((course) => <li key={course.code}>{course.code} · {course.title}</li>)}</ul>
                           </li>
                         ))}
                       </ol>
                     </details>
+                    <details className="module-disclosure"><summary>Assessment and graduation</summary>
+                      <p>{basicCatalog(track.slug).requirements}</p><ul>{basicCatalog(track.slug).assessment.map((item) => <li key={item}>{item}</li>)}</ul>
+                    </details>
+                    <p><a href={"https://drive.google.com/file/d/" + basicCatalog(track.slug).brochure + "/view"}>Program brochure</a> · <a href={"https://drive.google.com/file/d/" + basicCatalog(track.slug).catalog + "/view"}>Full catalog</a></p>
+                    {track.slug === "teenagers" && <p>Current tuition is US$250. The catalog PDF lists an earlier fee.</p>}
+                    <Link className="btn primary" href={"/enroll?program=basic-" + track.slug}>Enroll in this track · US$250</Link>
                   </div>
                 </article>
               </li>
@@ -82,6 +88,8 @@ export default function ProgramsPage() {
             {ACADEMY_OFFERS.map((academy) => (
               <li key={academy.product}>
                 <Link href={"/enroll?program=" + academy.product}>{academy.title}</Link>
+                {academyCatalog(academy.title) && <details><summary>Course outline</summary><ol>{academyCatalog(academy.title).courses.map((course) => <li key={course}>{course}</li>)}</ol>
+                  <a href={"https://drive.google.com/file/d/" + academyCatalog(academy.title).catalog + "/view"}>Read the academy catalog</a></details>}
                 <span className="num">{ACADEMY_HOURS} program hours</span>
               </li>
             ))}

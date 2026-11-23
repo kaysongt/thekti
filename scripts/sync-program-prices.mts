@@ -11,7 +11,7 @@ async function sync() {
     return;
   }
   const stripe = new Stripe(key, { apiVersion: STRIPE_API_VERSION, maxNetworkRetries: 2 });
-  const account = await stripe.accounts.retrieve();
+  const account = await stripe.accounts.retrieveCurrent();
   const merchantNames = [account.business_profile?.name, account.company?.name, account.settings?.dashboard?.display_name];
   const verified = merchantNames.some((name) => name && /^kingsword(?:$|\s|international|ministries|training|chicago)/i.test(name.trim()));
   if (!verified || !account.charges_enabled) {

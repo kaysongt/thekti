@@ -51,7 +51,7 @@ export async function createCheckoutForEnrollment(input: {
   let priceId = catalog.key === "advanced" ? config.advancedPriceId : config.certificatePriceId;
   if (offer) {
     const expectedAccount = programPrices.account;
-    if (!expectedAccount || (await stripe.accounts.retrieve()).id !== expectedAccount) {
+    if (!expectedAccount || (await stripe.accounts.retrieveCurrent()).id !== expectedAccount) {
       throw new Error("KingsWord Stripe account verification required.");
     }
     const ids: Record<string, string> = programPrices.prices;

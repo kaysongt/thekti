@@ -25,7 +25,7 @@ export default async function BelieversTrainingPage() {
           <p className={styles.meta}>7 essential classes · 21 program hours</p>
           <p className="deck">Build a foundation for following Jesus in seven free video modules. Learn at your own pace or with your local church.</p>
         </div>
-        <Image src="/assets/programs/believers.webp" alt="" width={834} height={469} sizes="(max-width: 700px) 100vw, 540px" />
+        <Image src="/assets/programs/believers-2026.webp" alt="" width={834} height={469} sizes="(max-width: 700px) 100vw, 540px" />
       </header>
       {enrolled ? <><div className="cards program-cards">
         <section className="card">

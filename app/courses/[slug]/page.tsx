@@ -74,7 +74,7 @@ export default async function CoursePage({ params }: Props) {
           </div>
         </div>
         <Image
-          src={course.intro_video?.poster ?? "/assets/programs/academies.webp"}
+          src={course.intro_video?.poster ?? "/assets/programs/academies-2026.webp"}
           alt=""
           width={834}
           height={469}

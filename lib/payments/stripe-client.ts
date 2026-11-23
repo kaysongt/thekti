@@ -1,3 +1,4 @@
+import programPrices from "./program-prices.json";
 import "server-only";
 
 import Stripe from "stripe";
@@ -114,4 +115,8 @@ export function getStripeClient(): Stripe {
     stripeClientKey = secretKey;
   }
   return stripeClient;
+}
+
+export function paidProgramCheckoutReady() {
+  return Boolean(programPrices.account && Object.keys(programPrices.prices).length === 17) && isStripeCheckoutConfigured();
 }

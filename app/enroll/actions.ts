@@ -3,6 +3,8 @@
 import { redirect } from "next/navigation";
 import { z } from "zod";
 
+import { programOffer } from "@/lib/programs";
+import { paidProgramCheckoutReady } from "@/lib/payments/stripe-client";
 import { BELIEVERS } from "@/lib/program-membership";
 import type { NewEnrollmentForStudent } from "@/lib/db/types";
 import { currentStudent, hashPassword, startSession } from "@/lib/auth";
@@ -36,8 +38,10 @@ export async function registerStudent(
   formData: FormData
 ): Promise<FormState> {
   const free = formData.get("program") === BELIEVERS;
+  const offer = programOffer(formData.get("program"));
+  if (offer && !paidProgramCheckoutReady()) return { error: "Payment enrollment is coming soon." };
   const session = await currentStudent();
-  if (!free) {
+  if (!free && !offer) {
     const deadline = await getRegistrationDeadline();
     if (!isRegistrationOpen(new Date(), deadline)) {
       return { error: "Registration is closed. Existing students can still sign in. For help, email kti@kingsword.org." };
@@ -81,7 +85,7 @@ export async function registerStudent(
 
   const { plan, product, scholarshipIntent } = parsed.data;
   const purchasableProducts = new Set(getPurchasableModules().map((module) => module.slug));
-  if (!free && plan === "certificate" && !purchasableProducts.has(product)) {
+  if (!free && !offer && plan === "certificate" && !purchasableProducts.has(product)) {
     return {
       fieldErrors: { product: "Please choose a certificate from the published program." },
       values,
@@ -92,15 +96,15 @@ export async function registerStudent(
   try {
     const price = plan === "advanced" ? PRICING.advanced : PRICING.certificate;
     const enrollment: NewEnrollmentForStudent = {
-      product: free ? BELIEVERS : plan === "advanced" ? "advanced" : product,
-      plan: free ? "certificate" : plan,
-      status: free ? "active" : "pending", amount: free ? 0 : price.amount, currency: price.currency,
+      product: offer?.product ?? (free ? BELIEVERS : plan === "advanced" ? "advanced" : product),
+      plan: free || offer ? "certificate" : plan,
+      status: free ? "active" : "pending", amount: offer?.amount ?? (free ? 0 : price.amount), currency: price.currency,
       provider: null, providerRef: null,
     };
     if (session) {
       studentId = session.id;
       const records = await db.getEnrollmentsForStudent(studentId);
-      const existing = records.find((e) => (e.product === enrollment.product || (!free && e.product === "advanced")) && (e.status === "active" || e.status === "pending"));
+      const existing = records.find((e) => (e.product === enrollment.product || (!free && !offer && e.product === "advanced")) && (e.status === "active" || e.status === "pending"));
       if (!existing) await db.joinProgram({ ...enrollment, studentId });
       else if (existing.accessSuspendedAt) return { error: "Please contact KTI about your suspended access." };
     } else {
@@ -125,6 +129,7 @@ export async function registerStudent(
   }
 
   if (!session) await startSession(studentId);
+  if (offer) redirect("/dashboard#program-" + offer.product);
   if (free) redirect("/programs/believers-training#classes");
   redirect(scholarshipIntent === "apply" ? "/scholarship" : "/dashboard");
 }

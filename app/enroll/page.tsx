@@ -8,7 +8,8 @@ import { db } from "@/lib/db";
 import { currentStudent } from "@/lib/auth";
 import { getModuleStatuses } from "@/lib/content";
 import { formatModuleReleaseDate, getCurriculum } from "@/lib/curriculum";
-import { isStripeCheckoutConfigured } from "@/lib/payments/stripe-client";
+import { programOffer } from "@/lib/programs";
+import { isStripeCheckoutConfigured, paidProgramCheckoutReady } from "@/lib/payments/stripe-client";
 
 import EnrollForm from "./EnrollForm";
 
@@ -21,6 +22,15 @@ export default async function EnrollPage({
 }) {
   const student = await currentStudent();
   const { program: selected, plan, scholarship } = await searchParams;
+  const offer = programOffer(selected);
+  if (offer) {
+    const records = student ? await db.getEnrollmentsForStudent(student.id) : [];
+    if (records.some((entry) => entry.product === offer.product && (entry.status === "active" || entry.status === "pending"))) redirect("/dashboard#program-" + offer.product);
+    return <main className="shell"><section className="authwrap"><div className="authcard">
+      <h1>{offer.title}</h1><p>One payment of US${offer.amount} covers {offer.product === "basic-certificates" ? "all six Basic Certificate tracks" : "this academy"}. Classes are coming soon. Your purchase gives you access as they open.</p>
+      {paidProgramCheckoutReady() ? <EnrollForm offerProduct={offer.product} signedIn={Boolean(student)} initialPlan="certificate" modules={[]} scholarshipIntent={false} returnPath={"/enroll?program=" + offer.product} /> : <p>Payment enrollment is coming soon.</p>}
+    </div></section></main>;
+  }
   if (selected === BELIEVERS) {
     if (student && belongsToBelievers(await db.getEnrollmentsForStudent(student.id))) redirect("/programs/believers-training#classes");
     return <main className="shell" id="main-content" tabIndex={-1}><div className="authwrap"><div className="authcard">

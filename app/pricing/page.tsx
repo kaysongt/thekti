@@ -60,6 +60,9 @@ export default function PricingPage() {
       </div>
 
       <div className="prose" style={{ marginTop: 44 }}>
+        <h2>Basic Certificates and Specialized Academies</h2>
+        <p>One payment of US$250 covers all six Basic Certificate tracks. Each Specialized Academy is US$50 and covers 20 program hours. Classes are coming soon.</p>
+        <p><Link href="/programs#basic-certificates">View Basic Certificate tracks</Link> · <Link href="/programs#specialized-academies">View the academies</Link></p>
         <h2>Assessment and grading</h2>
         {/*
           grading.note is an internal sign-off reminder for Dr. Kay, not customer

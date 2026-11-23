@@ -5,6 +5,7 @@ import { z } from "zod";
 
 import { currentStudent, hashPassword, verifyPassword } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { programOffer } from "@/lib/programs";
 import { hasMinisterWaiver } from "@/lib/access";
 import { createCheckoutForEnrollment } from "@/lib/payments/create-checkout";
 import { PromotionCodeError } from "@/lib/payments/promotion-code";
@@ -32,7 +33,6 @@ export async function beginStripeCheckout(formData: FormData): Promise<void> {
   }
 
   const enrollments = await db.getEnrollmentsForStudent(student.id);
-  if (hasMinisterWaiver(enrollments)) redirect("/dashboard");
   const enrollment = enrollments.find(
     (candidate) => candidate.id === parsed.data.enrollmentId
   );
@@ -40,6 +40,7 @@ export async function beginStripeCheckout(formData: FormData): Promise<void> {
     redirect("/dashboard?payment=invalid");
   }
 
+  if (!programOffer(enrollment.product) && hasMinisterWaiver(enrollments)) redirect("/dashboard");
   let destination: string;
   try {
     const result = await createCheckoutForEnrollment({

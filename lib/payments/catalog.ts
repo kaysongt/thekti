@@ -1,3 +1,4 @@
+import { programOffer } from "@/lib/programs";
 import { getModule, PRICING } from "@/lib/curriculum";
 import type { Enrollment, Plan } from "@/lib/db/types";
 
@@ -9,7 +10,7 @@ export type StripeCatalogItem = {
   amountMajor: number;
   amountMinor: number;
   currency: "usd";
-  priceEnvironmentVariable: "STRIPE_PRICE_ADVANCED" | "STRIPE_PRICE_CERTIFICATE";
+  priceEnvironmentVariable: "STRIPE_PRICE_ADVANCED" | "STRIPE_PRICE_CERTIFICATE" | null;
 };
 
 export class PaymentCatalogError extends Error {
@@ -26,6 +27,13 @@ export class PaymentCatalogError extends Error {
 export function getStripeCatalogItem(
   enrollment: CatalogEnrollment
 ): StripeCatalogItem {
+  const offer = programOffer(enrollment.product);
+  if (offer) {
+    if (enrollment.plan !== "certificate" || enrollment.amount !== offer.amount || enrollment.currency.toLowerCase() !== "usd") {
+      throw new PaymentCatalogError("stored_price_mismatch", "The enrollment does not match this program.");
+    }
+    return { key: "certificate", title: offer.title, amountMajor: offer.amount, amountMinor: offer.amount * 100, currency: "usd", priceEnvironmentVariable: null };
+  }
   const price = enrollment.plan === "advanced" ? PRICING.advanced : PRICING.certificate;
   let title: string;
 

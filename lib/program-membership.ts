@@ -1,3 +1,4 @@
+import { programOffer } from "./programs";
 import type { Enrollment } from "./db/types";
 
 export const BELIEVERS = "believers-training";
@@ -7,5 +8,5 @@ export function belongsToBelievers(enrollments: Enrollment[]) {
 }
 
 export function currentAdvancedEnrollments(enrollments: Enrollment[]) {
-  return enrollments.filter((e) => e.product !== BELIEVERS && (e.status === "active" || e.status === "pending"));
+  return enrollments.filter((e) => e.product !== BELIEVERS && !programOffer(e.product) && (e.status === "active" || e.status === "pending"));
 }

@@ -33,12 +33,14 @@ type ModuleOption = { slug: string; title: string; available: boolean; availabil
 export default function EnrollForm({
   initialPlan,
   free = false,
+  offerProduct,
   signedIn = false,
   modules,
   scholarshipIntent,
   returnPath = "/enroll",
 }: {
   free?: boolean;
+  offerProduct?: string;
   signedIn?: boolean;
   initialPlan: "certificate" | "advanced";
   modules: ModuleOption[];
@@ -58,7 +60,7 @@ export default function EnrollForm({
       {scholarshipIntent ? <input type="hidden" name="scholarshipIntent" value="apply" /> : null}
       {state.error ? <div className="notice bad" role="alert">{state.error}</div> : null}
 
-      {free ? <input type="hidden" name="program" value="believers-training" /> : <>
+      {free || offerProduct ? <input type="hidden" name="program" value={offerProduct ?? "believers-training"} /> : <>
       <div className="field">
         <label htmlFor="plan">What are you enrolling in?</label>
         <select

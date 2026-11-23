@@ -1,6 +1,8 @@
+import programPrices from "./program-prices.json";
 import "server-only";
 
 import Stripe from "stripe";
+import { programOffer } from "@/lib/programs";
 
 import { getStripeCatalogItem } from "@/lib/payments/catalog";
 import {
@@ -45,8 +47,17 @@ export async function createCheckoutForEnrollment(input: {
   const config = getStripeCheckoutConfiguration();
   const stripe = getStripeClient();
   const catalog = getStripeCatalogItem(input.enrollment);
-  const priceId =
-    catalog.key === "advanced" ? config.advancedPriceId : config.certificatePriceId;
+  const offer = programOffer(input.enrollment.product);
+  let priceId = catalog.key === "advanced" ? config.advancedPriceId : config.certificatePriceId;
+  if (offer) {
+    const expectedAccount = programPrices.account;
+    if (!expectedAccount || (await stripe.accounts.retrieve()).id !== expectedAccount) {
+      throw new Error("KingsWord Stripe account verification required.");
+    }
+    const ids: Record<string, string> = programPrices.prices;
+    priceId = ids[offer.product];
+    if (!priceId || config.mode !== "live") throw new Error("This program price is unavailable.");
+  }
   const stripePrice = await stripe.prices.retrieve(priceId);
   if (
     !stripePrice.active ||

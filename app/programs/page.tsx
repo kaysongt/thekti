@@ -2,7 +2,7 @@ import Link from "next/link";
 
 import Icon from "@/components/Icon";
 import ProgramCatalog from "@/components/ProgramCatalog";
-import { ACADEMIES, ACADEMY_HOURS, BASIC_CERTIFICATES, PROGRAMS } from "@/lib/programs";
+import { ACADEMY_OFFERS, ACADEMY_HOURS, BASIC_CERTIFICATES, PROGRAMS } from "@/lib/programs";
 
 export const metadata = {
   title: "Programs",
@@ -34,10 +34,11 @@ export default function ProgramsPage() {
           <div className="section-head">
             <div>
               <h2 id="basic-certificates">Basic Certificate tracks</h2>
-              <p>Six short Biblical Studies certificates, each written for the people it serves. All six are coming soon; open a track to see its modules.</p>
+              <p>Six short Biblical Studies certificates, each written for the people it serves. One payment of US$250 covers all six tracks as they launch.</p>
             </div>
             <span className="badge soon">Coming soon</span>
           </div>
+          <p><Link href="/enroll?program=basic-certificates">View the $250 all-track pass</Link></p>
           <ul className="k-grid track-grid">
             {BASIC_CERTIFICATES.map((track) => (
               <li key={track.slug}>
@@ -73,14 +74,14 @@ export default function ProgramsPage() {
           <div className="section-head">
             <div>
               <h2 id="specialized-academies">Specialized Academies</h2>
-              <p>Focused training on one subject. Each academy covers {ACADEMY_HOURS} program hours and opens for enrollment when it launches.</p>
+              <p>Focused training on one subject. Each academy covers {ACADEMY_HOURS} program hours and costs US$50 per academy. Classes are coming soon.</p>
             </div>
             <span className="badge soon">Coming soon</span>
           </div>
           <ul className="academy-list">
-            {ACADEMIES.map((academy) => (
-              <li key={academy}>
-                <span>{academy}</span>
+            {ACADEMY_OFFERS.map((academy) => (
+              <li key={academy.product}>
+                <Link href={"/enroll?program=" + academy.product}>{academy.title}</Link>
                 <span className="num">{ACADEMY_HOURS} program hours</span>
               </li>
             ))}

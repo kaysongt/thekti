@@ -15,7 +15,8 @@ import { getCourseStatuses, getLessonRows, getModuleStatuses } from "@/lib/conte
 import { getCurriculum } from "@/lib/curriculum";
 import { db } from "@/lib/db";
 import { isCoursePreview } from "@/lib/learning-mode";
-import { BELIEVERS_CLASSES } from "@/lib/programs";
+import { paidProgramCheckoutReady } from "@/lib/payments/stripe-client";
+import { programOffer, BELIEVERS_CLASSES } from "@/lib/programs";
 import { currentAdvancedEnrollments } from "@/lib/program-membership";
 import {
   buildStudentHub,
@@ -28,7 +29,7 @@ import {
   type ModuleState,
 } from "@/lib/student-hub";
 
-import { changeOwnPassword } from "./actions";
+import { beginStripeCheckout, changeOwnPassword } from "./actions";
 
 export const metadata: Metadata = {
   title: "My studies",
@@ -221,6 +222,10 @@ export default async function DashboardPage({
   const { access, payment, password } = await searchParams;
   const { program, grading } = getCurriculum();
   const allEnrollments = await db.getEnrollmentsForStudent(student.id);
+  const purchases = allEnrollments.flatMap((enrollment) => {
+    const offer = programOffer(enrollment.product);
+    return offer && ["pending", "active"].includes(enrollment.status) ? [{ offer, enrollment }] : [];
+  });
   const advancedEnrollments = currentAdvancedEnrollments(allEnrollments);
   const inAdvanced = advancedEnrollments.length > 0;
 
@@ -309,7 +314,7 @@ export default async function DashboardPage({
           </section>
         ) : null}
 
-        {!programs.length && !staffPreview ? (
+        {!programs.length && !purchases.length && !staffPreview ? (
           <section className="hub-program hub-empty" aria-labelledby="empty-title">
             <h2 id="empty-title">You have not joined a program yet</h2>
             <p>Choose a program to start studying. Believers Training is free and opens as soon as you join. The Advanced Certificate enrolls by intake; its page shows whether registration is open.</p>
@@ -318,6 +323,15 @@ export default async function DashboardPage({
           </section>
         ) : null}
 
+        {purchases.length > 0 && payment && paymentMessages[payment] && <p role="status">{paymentMessages[payment].text}</p>}
+        {purchases.map(({ offer, enrollment }) => <section key={enrollment.id} id={"program-" + offer.product} className="hub-program">
+          <h2>{offer.title}</h2>
+          {enrollment.accessSuspendedAt ? <p>Access is suspended. Contact KTI for help.</p> : enrollment.status === "active" ?
+            <p>Your enrollment is active. Classes are coming soon.</p> : <>
+              <p>One-time tuition · US${offer.amount}. Classes are coming soon.</p>
+              {paidProgramCheckoutReady() ? <form action={beginStripeCheckout}><input type="hidden" name="enrollmentId" value={enrollment.id} /><button className="btn primary">Pay US${offer.amount}</button></form> : <p>Checkout is coming soon.</p>}
+            </>}
+        </section>)}
         {programs.map((item, index) => item.kind === "believers" ? (
           <section key="believers" id="program-believers" className="hub-program" aria-labelledby="believers-title">
             <div className="hub-program-head">

@@ -72,7 +72,7 @@ export const PROGRAMS: readonly ProgramSummary[] = [
     imageAlt: "A small group discussing Scripture together",
     availability: "coming-soon",
     hoursLabel: "40–50 program hours",
-    priceLabel: "Coming soon",
+    priceLabel: "$250 once for all six tracks",
     audience: "Teenagers, ministry leaders, small group leaders, marketplace believers, and Christian creatives.",
     learn: "Six short Biblical Studies tracks, each shaped for the people it serves.",
     next: "Read each track’s module list now. Enrollment opens when the tracks launch.",
@@ -86,7 +86,7 @@ export const PROGRAMS: readonly ProgramSummary[] = [
     imageAlt: "An open Bible and notebook on a desk",
     availability: "coming-soon",
     hoursLabel: "20 program hours",
-    priceLabel: "Coming soon",
+    priceLabel: "$50 per academy",
     audience: "Believers who want focused training in one area of Christian life.",
     learn: "Sixteen academies, from prayer and faith to marriage, leadership, and church administration.",
     next: "Browse the academies now. Each opens for enrollment when it launches.",
@@ -224,3 +224,13 @@ export const BELIEVERS_CLASSES = [
   { title: "Purpose and Calling", videoId: "zRPiNwnmVbs" },
   { title: "Stewardship and Missional Lifestyle", videoId: "RLbRya09Mn8" },
 ] as const;
+
+export const BASIC_PASS = { product: "basic-certificates", title: "Basic Certificates · all six tracks", amount: 250 } as const;
+export const ACADEMY_OFFERS = ACADEMIES.map((title) => ({
+  product: "academy-" + title.replace(/ Academy$/, "").toLowerCase().replace(/ & /g, "-and-").replace(/[^a-z0-9]+/g, "-"),
+  title, amount: 50,
+}));
+
+export function programOffer(product: unknown) {
+  return product === BASIC_PASS.product ? BASIC_PASS : ACADEMY_OFFERS.find((offer) => offer.product === product);
+}

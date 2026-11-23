@@ -251,6 +251,10 @@ export interface DataStore {
   }): Promise<AssessmentSubmission>;
   submitAssessmentWrittenWork(id: string, studentId: string, response: string): Promise<AssessmentSubmission | null>;
   getLatestAssessmentSubmission(studentId: string, courseSlug: string): Promise<AssessmentSubmission | null>;
+  /** The newest submission for each course the student has attempted, in one read. */
+  getLatestAssessmentSubmissions(studentId: string): Promise<AssessmentSubmission[]>;
+  /** One submission with its student, for the staff grading screen. */
+  getAssessmentSubmissionForGrading(id: string): Promise<(AssessmentSubmission & { student: Student }) | null>;
   listPendingAssessments(): Promise<(AssessmentSubmission & { student: Student })[]>;
   gradeAssessment(input: {
     id: string;

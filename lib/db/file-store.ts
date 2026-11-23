@@ -562,6 +562,22 @@ export const fileStore: DataStore = {
     );
   },
 
+  async getLatestAssessmentSubmissions(studentId) {
+    const data = await read();
+    const latest = new Map<string, AssessmentSubmission>();
+    for (const item of data.assessmentSubmissions.filter((row) => row.studentId === studentId).sort((a, b) => b.createdAt.localeCompare(a.createdAt))) {
+      if (!latest.has(item.courseSlug)) latest.set(item.courseSlug, item);
+    }
+    return [...latest.values()];
+  },
+
+  async getAssessmentSubmissionForGrading(id) {
+    const data = await read();
+    const submission = data.assessmentSubmissions.find((item) => item.id === id);
+    const student = submission && data.students.find((candidate) => candidate.id === submission.studentId);
+    return submission && student ? { ...submission, student } : null;
+  },
+
   async listPendingAssessments() {
     const data = await read();
     return data.assessmentSubmissions.flatMap((submission) => {

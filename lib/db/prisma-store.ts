@@ -695,6 +695,23 @@ export const prismaStore: DataStore = {
     return submission ? mapAssessment(submission) : null;
   },
 
+  async getLatestAssessmentSubmissions(studentId) {
+    const submissions = await prisma.assessmentSubmission.findMany({
+      where: { studentId },
+      orderBy: { createdAt: "desc" },
+    });
+    const latest = new Map<string, (typeof submissions)[number]>();
+    for (const submission of submissions) if (!latest.has(submission.courseSlug)) latest.set(submission.courseSlug, submission);
+    return [...latest.values()].map(mapAssessment);
+  },
+
+  async getAssessmentSubmissionForGrading(id) {
+    const submission = await prisma.assessmentSubmission.findUnique({ where: { id }, include: { student: true } });
+    if (!submission) return null;
+    const { student, ...rest } = submission;
+    return { ...mapAssessment(rest), student: mapStudent(student) };
+  },
+
   async listPendingAssessments() {
     const submissions = await prisma.assessmentSubmission.findMany({
       where: { status: PrismaAssessmentStatus.PENDING_REVIEW },

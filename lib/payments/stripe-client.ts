@@ -118,5 +118,16 @@ export function getStripeClient(): Stripe {
 }
 
 export function paidProgramCheckoutReady(product: string) {
+  if (localEnrollmentPreview()) return true;
   return Boolean(programPrices.account && Object.hasOwn(programPrices.prices, product)) && isStripeCheckoutConfigured();
+}
+
+/**
+ * Local design review only: shows the paid-program enrollment screens on the
+ * file-backed dev store, where real checkout can never be configured. It is
+ * off in production builds and whenever a database is attached, and it does
+ * not make checkout work: the Pay button still fails safely without Stripe.
+ */
+function localEnrollmentPreview() {
+  return process.env.NODE_ENV !== "production" && !process.env.DATABASE_URL && process.env.KTI_LOCAL_ENROLLMENT_PREVIEW === "1";
 }

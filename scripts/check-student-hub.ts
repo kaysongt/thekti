@@ -9,7 +9,9 @@ import path from "node:path";
 import { getCurriculum } from "../lib/curriculum";
 import type { AssessmentSubmission, Enrollment } from "../lib/db/types";
 import { BASIC_OFFERS, ACADEMY_OFFERS, basicCatalog, ACADEMIES, ACADEMY_HOURS, BASIC_CERTIFICATES, PROGRAMS } from "../lib/programs";
-import { buildStudentHub, type AdvancedHub } from "../lib/student-hub";
+import { buildBelievers, buildPaid, buildStudentHub, type AdvancedHub, type BelieversHub } from "../lib/student-hub";
+import { ACADEMIES_CATALOG, ACADEMY_SUBJECTS, BASIC_TRACKS, academyBySlug, basicTrackBySlug, paidProgramState } from "../lib/catalog";
+import believersModules from "../content/believers-training/modules.json";
 
 const { modules } = getCurriculum();
 const [m1, m2] = modules;
@@ -42,13 +44,77 @@ const advancedOf = (programs: ReturnType<typeof hub>) => programs.find((p): p is
 // No enrollment: nothing to continue, so the page falls back to choosing a program.
 assert.deepEqual(hub({}), []);
 
-// Believers only: never claims "Resume" because class progress is not recorded.
+// Believers Training: the next step comes from saved module assessments; reading is not
+// recorded, so it says "Start Module N", never "Resume".
 {
   const programs = hub({ enrollments: [believers] });
   assert.equal(programs.length, 1);
-  assert.equal(programs[0].kind, "believers");
-  assert.equal(programs[0].next.label, "Open classes");
-  assert.equal(programs[0].next.href, "/programs/believers-training#classes");
+  const bt = programs[0] as BelieversHub;
+  assert.equal(bt.kind, "believers");
+  assert.equal(bt.next.label, "Start Module 1");
+  assert.equal(bt.next.href, "/programs/believers-training/the-new-covenant");
+  assert.match(bt.next.detail, /all 15 answers.*unlock Module 2/);
+  assert.deepEqual(bt.modules.map((m) => m.state), ["next", "locked", "locked", "locked", "locked", "locked", "locked"]);
+
+  const partway = buildBelievers([{ lessonId: "the-new-covenant", correct: 13 }, { lessonId: "identity-in-christ", correct: 12 }]);
+  assert.equal(partway.completed, 2);
+  assert.equal(partway.next.label, "Start Module 3");
+  assert.equal(partway.modules[0].score, 13);
+  assert.deepEqual(partway.modules.slice(0, 4).map((m) => m.state), ["completed", "completed", "next", "locked"]);
+
+  const finished = buildBelievers(believersModules.map((m) => ({ lessonId: m.slug, correct: 10 })));
+  assert.equal(finished.next.kind, "bt-final");
+  assert.equal(finished.next.href, "/programs/believers-training/assessment");
+}
+
+// A later Believers module URL explains the lock and names the assessment that opens it.
+{
+  const gate = fs.readFileSync(path.join(process.cwd(), "lib/believers-modules.ts"), "utf8");
+  assert.ok(gate.includes("redirect(`${believersPath}/locked?module=${module.slug}`)"), "locked modules go to the explanation, server-side");
+  assert.ok(gate.indexOf("getBelieversResults") < gate.indexOf("locked?module="), "the lock is decided from saved scores");
+  const locked = fs.readFileSync(path.join(process.cwd(), "app/programs/believers-training/locked/page.tsx"), "utf8");
+  assert.ok(locked.includes("Take the Module {required.number} assessment"));
+}
+
+// Paid programs: exact name and one-time price, one action, no repeat purchase for pass holders.
+{
+  const pending = enrollment({ id: "e-mkt", product: "basic-marketplace", plan: "certificate", status: "pending", amount: 250, provider: null, activatedAt: null });
+  const [card] = buildPaid([pending]);
+  assert.equal(card.title, "Certificate in Biblical Studies for Believers in the Marketplace");
+  assert.equal(card.status, "payment-due");
+  assert.equal(card.next.label, "Pay US$250");
+  assert.equal(card.statusLabel, "Payment due");
+
+  const grace = enrollment({ id: "e-grace", product: "academy-grace", plan: "certificate", amount: 50 });
+  const [academy] = buildPaid([grace]);
+  assert.equal(academy.title, "Grace Academy");
+  assert.equal(academy.status, "enrolled");
+  assert.match(academy.statusLabel, /classes coming soon/);
+
+  const pass = enrollment({ id: "e-pass", product: "basic-certificates", plan: "certificate", amount: 250 });
+  const cards = buildPaid([pass, enrollment({ id: "e-dup", product: "basic-teenagers", plan: "certificate", amount: 250, status: "pending" })]);
+  assert.equal(cards.length, 1, "a track covered by the pass is not shown as a separate purchase");
+  assert.equal(cards[0].covers?.length, 6);
+  for (const track of BASIC_TRACKS) assert.equal(paidProgramState(track, [pass]), "covered-by-pass");
+  assert.equal(paidProgramState(BASIC_TRACKS[0], [pending]), "none");
+  assert.equal(paidProgramState(BASIC_TRACKS.find((t) => t.slug === "marketplace")!, [pending]), "payment-due");
+
+  // Every track and academy has its own page, price and enrollment product.
+  assert.equal(BASIC_TRACKS.length, 6);
+  assert.ok(BASIC_TRACKS.every((t) => t.price === 250 && t.href.startsWith("/programs/basic-certificates/") && t.name.startsWith("Certificate in Biblical Studies for ")));
+  assert.equal(BASIC_TRACKS.reduce((n, t) => n + t.sessionCount, 0), 145);
+  assert.equal(ACADEMIES_CATALOG.length, 24);
+  assert.ok(ACADEMIES_CATALOG.every((a) => a.price === 50 && ACADEMY_SUBJECTS.includes(a.subject)));
+  assert.equal(academyBySlug("grace")?.name, "Grace Academy");
+  assert.equal(basicTrackBySlug("teenagers")?.pdfFeeNote, "Current tuition is US$250. The catalog PDF lists an earlier fee.");
+
+  // Enrollment keeps the chosen program through sign-in and lands on it in My studies.
+  const enrollPage = fs.readFileSync(path.join(process.cwd(), "app/enroll/page.tsx"), "utf8");
+  const enrollAction = fs.readFileSync(path.join(process.cwd(), "app/enroll/actions.ts"), "utf8");
+  assert.ok(enrollPage.includes("<OrderSummary program={paid} />"), "price and program shown before account creation");
+  assert.ok(enrollPage.includes("returnPath={returnPath}"));
+  assert.ok(enrollAction.includes('redirect("/dashboard?program=" + offer.product)'));
+  assert.ok(enrollAction.includes("ownsBasicPass(records)"), "pass holders cannot buy a covered track");
 }
 
 // New Advanced student with nothing done: Start, not Resume.
@@ -173,7 +239,8 @@ assert.deepEqual(hub({}), []);
 // Program data: verified hours, six Basic tracks (Teenagers 40, the rest 50), "program hours" wording.
 {
   assert.deepEqual(PROGRAMS.map((p) => p.linkLabel), ["Believers Training", "Advanced Certificates", "Basic Certificates", "Specialized Academy"]);
-  assert.deepEqual(PROGRAMS.map((p) => p.href), ["/programs/believers-training", "/programs/advanced-certificate", "/programs#basic-certificates", "/programs#specialized-academies"]);
+  assert.deepEqual(PROGRAMS.map((p) => p.href), ["/programs/believers-training", "/programs/advanced-certificate", "/programs/basic-certificates", "/programs/specialized-academies"]);
+  assert.ok(PROGRAMS.every((p) => p.fit.length > 20), "each homepage link says who the program fits");
   assert.equal(PROGRAMS[1].hoursLabel, `${getCurriculum().program.total_hours} program hours`);
   assert.equal(BASIC_CERTIFICATES.length, 6);
   for (const track of BASIC_CERTIFICATES) {
